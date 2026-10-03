@@ -186,6 +186,13 @@ export default function CashStatementScreen() {
             <Text style={styles.title}>
               كشف الحساب
             </Text>
+
+            {loading ? (
+              <ActivityIndicator
+                size="small"
+                color={appTheme.primaryColor}
+              />
+            ) : null}
           </View>
         </View>
 
