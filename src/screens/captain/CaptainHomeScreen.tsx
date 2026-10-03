@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import {
   ActivityIndicator,
-  Image,
   Alert,
   Platform,
   Pressable,
@@ -32,7 +31,6 @@ import Svg, {
 } from "react-native-svg";
 import * as Location from "expo-location";
 import MapView, { Marker, Polyline } from "../../components/maps/MapView";
-import riderImage from "../../assets/delivery-rider.png";
 
 import Screen from "../../components/Screen";
 import { useAuthStore } from "../../store/authStore";
@@ -1796,10 +1794,10 @@ export default function CaptainHomeScreen() {
             pointerEvents="none"
             style={styles.heroVectorWrap}
           >
-            <Image
-              source={riderImage}
-              style={styles.heroRiderImage}
-              resizeMode="contain"
+            <MaterialCommunityIcons
+              name="truck-fast-outline"
+              size={132}
+              color="#FFD9A0"
             />
           </View>
 
@@ -3398,11 +3396,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 2,
     opacity: 0.98,
-  },
-
-  heroRiderImage: {
-    width: "100%",
-    height: "100%",
   },
 
 
