@@ -10,7 +10,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import Screen from "../../components/Screen";
-import LoadingState from "../../components/LoadingState";
 import { useAppTheme } from "../../theme/useAppTheme";
 import {
   getCaptainCashStatement,
@@ -28,14 +27,22 @@ export default function ReportsScreen() {
   const [kpi, setKpi] = useState<any>(null);
   const [rating, setRating] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (background = false, manual = false) => {
     if (!user?.id) {
       setLoading(false);
       return;
     }
 
     try {
+      if (!background && !manual) {
+        setLoading(true);
+      }
+      if (manual) {
+        setRefreshing(true);
+      }
+
       const [cashData, kpiData, ratingData] =
         await Promise.all([
           getCaptainCashStatement(user.id),
@@ -54,20 +61,19 @@ export default function ReportsScreen() {
       );
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [user?.id]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    void load();
 
-  if (loading) {
-    return (
-      <Screen>
-        <LoadingState message="جاري تحميل التقارير..." />
-      </Screen>
-    );
-  }
+    const timer = setInterval(() => {
+      void load(true);
+    }, 30000);
+
+    return () => clearInterval(timer);
+  }, [load]);
 
   const collected =
     cash?.collectedFromCustomers ??
@@ -105,8 +111,8 @@ export default function ReportsScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={loading}
-            onRefresh={load}
+            refreshing={refreshing}
+            onRefresh={() => void load(false, true)}
             tintColor={appTheme.primaryColor}
             colors={[appTheme.primaryColor]}
           />
