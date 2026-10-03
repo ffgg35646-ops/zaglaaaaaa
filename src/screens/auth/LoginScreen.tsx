@@ -303,7 +303,7 @@ export default function LoginScreen() {
           <View style={styles.cardIcon}>
             {role === "captain" ? (
               <Image
-                source={require("../../assets/captain-identity.png")}
+                source={require("../../../assets/captain-identity.png")}
                 style={styles.cardCaptainIcon}
                 resizeMode="contain"
               />
