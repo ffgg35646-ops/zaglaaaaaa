@@ -58,7 +58,7 @@ export default function CashStatementScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(
-    async (refresh = false) => {
+    async (refresh = false, background = false) => {
       if (!user?.id) {
         setLoading(false);
         return;
@@ -67,7 +67,7 @@ export default function CashStatementScreen() {
       try {
         if (refresh) {
           setRefreshing(true);
-        } else {
+        } else if (!background) {
           setLoading(true);
         }
 
@@ -93,6 +93,12 @@ export default function CashStatementScreen() {
 
   useEffect(() => {
     void load();
+
+    const timer = setInterval(() => {
+      void load(false, true);
+    }, 30000);
+
+    return () => clearInterval(timer);
   }, [load]);
 
   const summary = useMemo(() => {
@@ -150,23 +156,6 @@ export default function CashStatementScreen() {
       net,
     };
   }, [data]);
-
-  if (loading) {
-    return (
-      <Screen>
-        <View style={styles.loading}>
-          <ActivityIndicator
-            size="large"
-            color={appTheme.primaryColor}
-          />
-
-          <Text style={styles.loadingText}>
-            جاري تحميل كشف الحساب...
-          </Text>
-        </View>
-      </Screen>
-    );
-  }
 
   return (
     <Screen>
