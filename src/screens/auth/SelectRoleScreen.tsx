@@ -10,7 +10,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Circle, G, Line, Path, Rect } from "react-native-svg";
 
 import Screen from "../../components/Screen";
 import { useAuthStore } from "../../store/authStore";
@@ -20,6 +20,176 @@ const ORANGE_DARK = "#B4460A";
 const GOLD = "#FFB25E";
 const CREAM = "#FFFDF8";
 const DARK = "#4A1B0C";
+
+function CaptainMotorcycleIllustration() {
+  return (
+    <Svg
+      width={172}
+      height={128}
+      viewBox="0 0 172 128"
+      fill="none"
+      accessibilityLabel="Captain on motorcycle"
+    >
+      {/* soft shadow under the motorcycle */}
+      <Path
+        d="M27 108 C47 100 108 100 137 108 C119 117 47 119 27 108Z"
+        fill="rgba(74,27,12,0.11)"
+      />
+
+      <G>
+        {/* rear delivery bag */}
+        <Rect
+          x="70"
+          y="34"
+          width="28"
+          height="31"
+          rx="8"
+          fill="#FFF1E4"
+          stroke="#E5501C"
+          strokeWidth="2.5"
+        />
+        <Path
+          d="M76 34V30C76 26.7 78.7 24 82 24H86C89.3 24 92 26.7 92 30V34"
+          stroke="#E5501C"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <Path
+          d="M76 48H92"
+          stroke="#FFB25E"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+
+        {/* motorcycle wheels */}
+        <Circle cx="43" cy="91" r="16" fill="#26160B" />
+        <Circle cx="43" cy="91" r="8" fill="#FFFDF8" />
+        <Circle cx="117" cy="91" r="16" fill="#26160B" />
+        <Circle cx="117" cy="91" r="8" fill="#FFFDF8" />
+
+        {/* motorcycle body */}
+        <Path
+          d="M43 91L60 70L84 86L103 84L117 91"
+          stroke="#E5501C"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M59 70L77 70L87 79L102 79"
+          stroke="#4A1B0C"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+        <Path
+          d="M77 70L69 56"
+          stroke="#E5501C"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        <Path
+          d="M102 79L111 64L123 62"
+          stroke="#4A1B0C"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Line
+          x1="111"
+          y1="64"
+          x2="119"
+          y2="73"
+          stroke="#4A1B0C"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+        <Path
+          d="M47 72L58 68"
+          stroke="#FFB25E"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+
+        {/* captain torso */}
+        <Path
+          d="M89 42C94 42 101 46 104 53L99 70L84 69L82 54C83 47 85 43 89 42Z"
+          fill="#E5501C"
+        />
+        <Path
+          d="M86 46L77 56"
+          stroke="#E5501C"
+          strokeWidth="6"
+          strokeLinecap="round"
+        />
+        <Path
+          d="M98 50L108 58"
+          stroke="#E5501C"
+          strokeWidth="6"
+          strokeLinecap="round"
+        />
+        <Circle cx="90" cy="35" r="10" fill="#FFD0A6" />
+
+        {/* helmet */}
+        <Path
+          d="M79 35C79 25 85 18 94 18C102 18 108 24 108 33V37H79V35Z"
+          fill="#26160B"
+        />
+        <Path
+          d="M84 29C86 24 90 22 94 22C100 22 104 25 105 30"
+          stroke="#FFB25E"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        <Path
+          d="M101 37H111"
+          stroke="#26160B"
+          strokeWidth="4"
+          strokeLinecap="round"
+        />
+
+        {/* captain arm reaching the handle */}
+        <Path
+          d="M103 53L115 61"
+          stroke="#FFD0A6"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+
+        {/* captain leg */}
+        <Path
+          d="M87 68L76 83L91 89"
+          stroke="#26160B"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Path
+          d="M91 89H99"
+          stroke="#26160B"
+          strokeWidth="5"
+          strokeLinecap="round"
+        />
+
+        {/* small motion accents */}
+        <Path
+          d="M24 63H34"
+          stroke="#FFFFFF"
+          strokeWidth="3"
+          strokeLinecap="round"
+          opacity="0.72"
+        />
+        <Path
+          d="M20 71H28"
+          stroke="#FFFFFF"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          opacity="0.55"
+        />
+        <Circle cx="134" cy="36" r="4" fill="#FFFFFF" opacity="0.58" />
+      </G>
+    </Svg>
+  );
+}
 
 export default function SelectRoleScreen() {
   const navigation = useNavigation<any>();
@@ -84,11 +254,10 @@ export default function SelectRoleScreen() {
             <View style={styles.blobTwo} />
 
             <View style={styles.icon3d}>
-              <MaterialCommunityIcons
-                name="truck-fast-outline"
-                size={62}
-                color={ORANGE}
-              />
+              <View pointerEvents="none" style={styles.artGlow} />
+              <View pointerEvents="none" style={styles.captainArt}>
+                <CaptainMotorcycleIllustration />
+              </View>
             </View>
 
             <Text style={styles.welcome}>أهلا بيك</Text>
@@ -291,9 +460,9 @@ const styles = StyleSheet.create({
   },
 
   icon3d: {
-    width: 112,
-    height: 112,
-    borderRadius: 31,
+    width: 174,
+    height: 132,
+    borderRadius: 34,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
@@ -302,11 +471,32 @@ const styles = StyleSheet.create({
       width: 0,
       height: 14,
     },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.24,
     shadowRadius: 18,
     elevation: 8,
-    marginBottom: 15,
+    marginBottom: 11,
     zIndex: 5,
+    overflow: "visible",
+  },
+
+  artGlow: {
+    position: "absolute",
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: "#FFF4E9",
+    top: 10,
+    right: 30,
+  },
+
+  captainArt: {
+    position: "absolute",
+    left: 1,
+    top: -3,
+    width: 172,
+    height: 128,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   welcome: {
