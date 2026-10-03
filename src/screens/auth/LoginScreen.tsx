@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -300,15 +301,19 @@ export default function LoginScreen() {
           <View style={styles.cardTopGlow} />
 
           <View style={styles.cardIcon}>
-            <MaterialCommunityIcons
-              name={
-                role === "captain"
-                  ? "truck-fast-outline"
-                  : "storefront-outline"
-              }
-              size={30}
-              color={ORANGE}
-            />
+            {role === "captain" ? (
+              <Image
+                source={require("../../assets/captain-identity.png")}
+                style={styles.cardCaptainIcon}
+                resizeMode="contain"
+              />
+            ) : (
+              <MaterialCommunityIcons
+                name="storefront-outline"
+                size={30}
+                color={ORANGE}
+              />
+            )}
           </View>
 
           <Text style={styles.cardTitle}>تسجيل الدخول</Text>
@@ -558,6 +563,12 @@ const createStyles = (
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 9,
+      overflow: "hidden",
+    },
+
+    cardCaptainIcon: {
+      width: 50,
+      height: 50,
     },
 
     cardTitle: {

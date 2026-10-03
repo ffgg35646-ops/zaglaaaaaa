@@ -4,7 +4,7 @@
     "slug": "zajel-app",
     "version": "1.0.2",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/captain-identity.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
@@ -22,7 +22,7 @@
       "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#FFF3DE",
-        "foregroundImage": "./src/assets/delivery-rider.png"
+        "foregroundImage": "./assets/captain-identity.png"
       }
     },
     "web": {
@@ -48,7 +48,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/icon.png",
+          "image": "./assets/captain-identity.png",
           "resizeMode": "contain",
           "backgroundColor": "#FFFDF8",
           "imageWidth": 180
