@@ -31,11 +31,17 @@ export default function OnlineControlScreen() {
   const [locationGranted, setLocationGranted] = useState(false);
 
   useEffect(() => {
-    loadState();
-    requestLocation();
+    void loadState();
+    void requestLocation();
+
+    const timer = setInterval(() => {
+      void loadState(true);
+    }, 15000);
+
+    return () => clearInterval(timer);
   }, []);
 
-  async function loadState() {
+  async function loadState(background = false) {
     if (!user?.id) {
       setLoading(false);
       return;
