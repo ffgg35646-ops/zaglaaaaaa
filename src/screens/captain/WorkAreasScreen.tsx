@@ -24,9 +24,11 @@ export default function WorkAreasScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (background = false) => {
     try {
-      setLoading(true);
+      if (!background) {
+        setLoading(true);
+      }
 
       if (!user?.id) {
         setAreas([]);
@@ -45,7 +47,9 @@ export default function WorkAreasScreen() {
       setAreas(rows);
     } catch (error) {
       console.error("Failed to load captain work areas:", error);
-      setAreas([]);
+      if (!background) {
+        setAreas([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -53,7 +57,13 @@ export default function WorkAreasScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      load();
+      void load();
+
+      const timer = setInterval(() => {
+        void load(true);
+      }, 30000);
+
+      return () => clearInterval(timer);
     }, [load]),
   );
 
