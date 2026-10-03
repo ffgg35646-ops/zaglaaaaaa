@@ -39,11 +39,13 @@ export default function PerformanceScreen() {
 
       setData(await getCaptainKpi(user.id));
     } catch (e: any) {
-      Alert.alert(
-        "تعذر تحميل الأداء",
-        e?.response?.data?.message ||
-          "تعذر تحميل مؤشرات الأداء."
-      );
+      if (!background) {
+        Alert.alert(
+          "تعذر تحميل الأداء",
+          e?.response?.data?.message ||
+            "تعذر تحميل مؤشرات الأداء."
+        );
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
