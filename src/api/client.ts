@@ -11,7 +11,7 @@ function debugApi(label: string, data?: unknown) {
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15000,
-  withCredentials: true,
+  withCredentials: false,
   headers: {
     Accept: "application/json",
   },
@@ -48,7 +48,11 @@ async function removeToken() {
 }
 
 api.interceptors.request.use(async (config) => {
-  debugApi("REQUEST", { method: config.method?.toUpperCase(), url: `${API_BASE_URL}${config.url || ""}` });
+  debugApi("REQUEST", {
+    method: config.method?.toUpperCase(),
+    url: `${API_BASE_URL}${config.url || ""}`,
+  });
+
   const token = await readToken();
 
   if (token) {
@@ -72,7 +76,12 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => {
-    debugApi("RESPONSE", { method: response.config.method?.toUpperCase(), url: response.config.url, status: response.status, data: response.data });
+    debugApi("RESPONSE", {
+      method: response.config.method?.toUpperCase(),
+      url: response.config.url,
+      status: response.status,
+      data: response.data,
+    });
     return response;
   },
   (error) => {
