@@ -18,7 +18,6 @@ export default function RuntimeGate({
 }) {
   const auth: any = useAuthStore();
 
-  const [loading, setLoading] = useState(true);
   const [maintenance, setMaintenance] = useState(false);
   const [message, setMessage] = useState("");
   const [forceUpdate, setForceUpdate] = useState(false);
