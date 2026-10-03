@@ -745,7 +745,7 @@ export default function CaptainHomeScreen() {
   const navigation = useNavigation<any>();
   const user = useAuthStore((state) => state.user);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceJustCompleted, setAttendanceJustCompleted] = useState(false);
@@ -1424,6 +1424,100 @@ export default function CaptainHomeScreen() {
 
     return unsubscribe;
   }, [navigation, user?.id]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function refreshLiveState() {
+      try {
+        const [shiftResult, attendanceResult] =
+          await Promise.all([
+            checkShift(),
+            getAttendanceHistory(),
+          ]);
+
+        if (!active) return;
+
+        if (shiftResult) {
+          setShift((previous: any) => ({
+            ...(previous || {}),
+            ...(shiftResult || {}),
+            assignment:
+              shiftResult?.assignment ??
+              previous?.assignment ??
+              null,
+            shift:
+              shiftResult?.shift ??
+              previous?.shift ??
+              null,
+          }));
+
+          setShiftCardOpen(
+            Boolean(
+              shiftResult?.assignment?.shiftId
+            )
+          );
+        }
+
+        if (attendanceResult) {
+          setAttendance(attendanceResult);
+        }
+
+        const selectedAreaId = String(
+          workArea?._id ??
+            workArea?.id ??
+            ""
+        );
+
+        if (selectedAreaId) {
+          const board =
+            await getCaptainOrderBoard(
+              selectedAreaId,
+            );
+
+          if (!active) return;
+
+          const activeCandidates = [
+            board?.activeOrders,
+            board?.data?.activeOrders,
+          ];
+
+          const activeList =
+            activeCandidates.find(
+              (value) => Array.isArray(value),
+            ) || [];
+
+          const availableCandidates = [
+            board?.availableOrders,
+            board?.data?.availableOrders,
+          ];
+
+          const availableList =
+            availableCandidates.find(
+              (value) => Array.isArray(value),
+            ) || [];
+
+          setActiveOrdersCount(
+            activeList.length,
+          );
+          setAvailableOrdersCount(
+            availableList.length,
+          );
+        }
+      } catch {
+        // التحديث الخلفي اختياري؛ لا نوقف الواجهة عند فشل مؤقت.
+      }
+    }
+
+    const timer = setInterval(() => {
+      void refreshLiveState();
+    }, 15000);
+
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [user?.id, workArea?._id, workArea?.id]);
 
   useEffect(() => {
     if (!location || !customerLocation) {
