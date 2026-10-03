@@ -1891,7 +1891,7 @@ export default function CaptainHomeScreen() {
             <MaterialCommunityIcons
               name="truck-fast-outline"
               size={132}
-              color="#FFD9A0"
+              color="#4A1B0C"
             />
           </View>
 
