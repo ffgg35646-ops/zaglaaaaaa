@@ -113,9 +113,11 @@ const selectedShiftId = String(
       "",
   );
 
-  async function load() {
+  async function load(background = false) {
     try {
-      setLoading(true);
+      if (!background) {
+        setLoading(true);
+      }
 
       let shiftsResult: any = null;
       let currentResult: any = null;
@@ -163,6 +165,10 @@ const selectedShiftId = String(
           null,
       );
     } catch (error: any) {
+      if (background) {
+        return;
+      }
+
       Alert.alert(
         "تعذر تحميل الشفتات",
         error?.response?.data?.message ||
@@ -176,6 +182,12 @@ const selectedShiftId = String(
 
   useEffect(() => {
     void load();
+
+    const timer = setInterval(() => {
+      void load(true);
+    }, 30000);
+
+    return () => clearInterval(timer);
   }, []);
 
   async function chooseShift(id: string) {
