@@ -54,11 +54,13 @@ export default function ReportsScreen() {
       setKpi(kpiData);
       setRating(ratingData);
     } catch (error: any) {
-      Alert.alert(
-        "تعذر تحميل التقارير",
-        error?.response?.data?.message ||
-          "تعذر تحميل بيانات التقارير."
-      );
+      if (!background) {
+        Alert.alert(
+          "تعذر تحميل التقارير",
+          error?.response?.data?.message ||
+            "تعذر تحميل بيانات التقارير."
+        );
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
