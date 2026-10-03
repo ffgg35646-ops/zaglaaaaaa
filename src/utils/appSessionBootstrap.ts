@@ -1,6 +1,7 @@
 
 import { registerPushNotifications } from "../api/push";
 import { startCaptainLocationService } from "./captainLocationService";
+import { startCaptainOrderRuntime, stopCaptainOrderRuntime } from "./captainOrderRuntime";
 
 let captainStarted = false;
 
@@ -24,10 +25,14 @@ export async function bootstrapAfterLogin(
     } catch {
       // الموقع سيُطلب عند توفره.
     }
+
+    startCaptainOrderRuntime();
   }
 }
 
 export async function stopCaptainRuntime() {
+  stopCaptainOrderRuntime();
+
   try {
     const mod = await import("./captainLocationService");
     mod.stopCaptainLocationService();
