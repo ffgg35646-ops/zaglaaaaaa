@@ -7,7 +7,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://dzwan.vercel.app/api"
+        "EXPO_PUBLIC_API_URL": "https://dzwan-native-http-yxfq.vercel.app/api"
       },
       "channel": "preview"
     },
@@ -17,7 +17,7 @@
       },
       "environment": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://dzwan.vercel.app/api"
+        "EXPO_PUBLIC_API_URL": "https://dzwan-native-http-yxfq.vercel.app/api"
       },
       "autoIncrement": true,
       "channel": "production"
