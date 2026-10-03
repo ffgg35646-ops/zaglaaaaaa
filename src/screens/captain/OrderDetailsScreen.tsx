@@ -27,7 +27,6 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 
 import Screen from "../../components/Screen";
 import AppButton from "../../components/AppButton";
-import LoadingState from "../../components/LoadingState";
 import OrderStatusBadge from "../../components/OrderStatusBadge";
 import { useAppTheme } from "../../theme/useAppTheme";
 import {
@@ -923,14 +922,6 @@ export default function OrderDetailsScreen() {
       setCancelBusy(false);
       setBusy(false);
     }
-  }
-
-  if (loading) {
-    return (
-      <Screen>
-        <LoadingState message="جاري تحميل تفاصيل الطلب..." />
-      </Screen>
-    );
   }
 
   return (
