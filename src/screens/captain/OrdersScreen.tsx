@@ -24,6 +24,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ExpoLocation from "expo-location";
 import { useNavigation } from "@react-navigation/native";
 import { sendEmergencyAlert, type CaptainEmergencyType } from "../../api/captainEmergency";
+import { AVAILABLE_ORDERS_CACHE_KEY } from "../../utils/captainOrderRuntime";
 
 import Screen from "../../components/Screen";
 import LoadingState from "../../components/LoadingState";
@@ -43,7 +44,6 @@ const HISTORY_STATUSES = [
 
 const HISTORY_PAGE_SIZE = 5;
 const ORDERS_CACHE_KEY = "@zajel/orders-cache-v1";
-const AVAILABLE_ORDERS_CACHE_KEY = "@zajel/available-orders-cache-v1";
 
 const EMERGENCY_REASONS: Array<{
   value: CaptainEmergencyType;
