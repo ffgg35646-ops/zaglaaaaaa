@@ -131,6 +131,19 @@ export default function ReportsScreen() {
           <View style={styles.headerText}>
             <Text style={styles.eyebrow}>زاجل ديلفري</Text>
             <Text style={styles.title}>التقارير</Text>
+
+            {loading ? (
+              <Text
+                style={{
+                  marginTop: 5,
+                  color: appTheme.secondaryTextColor,
+                  fontSize: 10,
+                  fontWeight: "700",
+                }}
+              >
+                جاري تحديث البيانات...
+              </Text>
+            ) : null}
           </View>
         </View>
 
