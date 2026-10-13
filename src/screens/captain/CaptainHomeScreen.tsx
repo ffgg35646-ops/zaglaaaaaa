@@ -1272,9 +1272,12 @@ export default function CaptainHomeScreen() {
     setShiftSaving(true);
 
     try {
-      await selectWeeklyShift(newShiftId);
+      const selectionResponse = await selectWeeklyShift(newShiftId);
+      const savedAssignment = selectionResponse?.data ?? {};
+      const selectedAt = savedAssignment?.changedAt ?? savedAssignment?.createdAt ?? savedAssignment?.weekStart ?? new Date().toISOString();
+      const nextChangeAt = new Date(new Date(selectedAt).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      // فتح الكارت فورًا بمجرد نجاح اختيار الشفت.
+      // فتح الكارت وقفل التغيير فور نجاح الحفظ، من دون انتظار تحديث الخلفية.
       setShiftCardOpen(true);
 
       const selectedShift =
@@ -1283,24 +1286,17 @@ export default function CaptainHomeScreen() {
             String(item?._id ?? item?.id ?? "") === newShiftId
         ) || null;
 
-      if (selectedShift) {
-        setShift((previous: any) => ({
-          ...(previous || {}),
-          assignment: {
-            ...(previous?.assignment || {}),
-            shiftId: selectedShift,
-          },
-          shift: selectedShift,
-        }));
-      } else {
-        setShift((previous: any) => ({
-          ...(previous || {}),
-          assignment: {
-            ...(previous?.assignment || {}),
-            shiftId: newShiftId,
-          },
-        }));
-      }
+      setShift((previous: any) => ({
+        ...(previous || {}),
+        canSelectNewShift: false,
+        nextChangeAt,
+        assignment: {
+          ...(previous?.assignment || {}),
+          ...(savedAssignment || {}),
+          shiftId: selectedShift || newShiftId,
+        },
+        shift: selectedShift || previous?.shift || null,
+      }));
 
       setShiftPickerOpen(false);
       void loadData();
@@ -2170,6 +2166,23 @@ export default function CaptainHomeScreen() {
                         ? "يمكنك تغيير الشفت الآن أو الاستمرار بالشفت الحالي."
                         : "لا يمكن تغيير الشفت قبل مرور 7 أيام كاملة من وقت اختياره بتوقيت بغداد."}
                     </Text>
+                    {!canChangeShift && shift?.nextChangeAt ? (
+                      <Text
+                        style={{
+                          marginTop: 5,
+                          color: "#6B7280",
+                          fontSize: 11,
+                          fontWeight: "700",
+                          textAlign: "center",
+                        }}
+                      >
+                        موعد إتاحة التغيير: {new Intl.DateTimeFormat("ar-IQ-u-nu-latn", {
+                          timeZone: "Asia/Baghdad",
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(new Date(shift.nextChangeAt))}
+                      </Text>
+                    ) : null}
                   </View>
                 ) : null}
                 {availableShifts.map((item) => {
