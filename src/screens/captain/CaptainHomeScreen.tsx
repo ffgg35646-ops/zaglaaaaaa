@@ -31,7 +31,6 @@ import Svg, {
   Line,
 } from "react-native-svg";
 import * as Location from "expo-location";
-import MapView, { Marker, Polyline } from "../../components/maps/MapView";
 
 import Screen from "../../components/Screen";
 import { useAuthStore } from "../../store/authStore";
@@ -1914,22 +1913,10 @@ export default function CaptainHomeScreen() {
     }
   }
 
-  const mapCenter =
-    customerLocation || location;
-
-  const mapRegion = mapCenter
-    ? {
-        latitude: mapCenter.latitude,
-        longitude: mapCenter.longitude,
-        latitudeDelta: 0.045,
-        longitudeDelta: 0.045,
-      }
-    : {
-        latitude: 33.3152,
-        longitude: 44.3661,
-        latitudeDelta: 4.8,
-        longitudeDelta: 5.2,
-      };
+  // Keep the embedded web map on Iraq until a customer link is supplied.
+  // The native captain screen intentionally avoids mounting react-native-maps:
+  // maps are an optional extra and must never block the delivery dashboard.
+  const mapCenter = customerLocation;
 
   const recentOrders = orders.slice(0, 8);
 
@@ -2633,46 +2620,23 @@ export default function CaptainHomeScreen() {
               })}
             </View>
           ) : (
-            <MapView
-              style={styles.nativeMap}
-              region={mapRegion}
-              showsUserLocation
-              showsMyLocationButton
-              loadingEnabled
+            <View
+              style={[
+                styles.nativeMap,
+                styles.nativeMapFallback,
+              ]}
             >
-              {location ? (
-                <Marker
-                  coordinate={location}
-                  title="موقع الكابتن"
-                >
-                  <View
-                    style={styles.captainMarker}
-                  >
-                    <MaterialCommunityIcons
-                      name="motorbike"
-                      size={22}
-                      color="#FFFFFF"
-                    />
-                  </View>
-                </Marker>
-              ) : null}
-
-              {customerLocation ? (
-                <Marker
-                  coordinate={customerLocation}
-                  title="موقع العميل"
-                  pinColor={RED}
-                />
-              ) : null}
-
-              {route.length > 1 ? (
-                <Polyline
-                  coordinates={route}
-                  strokeColor={ORANGE}
-                  strokeWidth={5}
-                />
-              ) : null}
-            </MapView>
+              <MaterialCommunityIcons
+                name="map-marker-radius-outline"
+                size={30}
+                color={ORANGE}
+              />
+              <Text style={styles.nativeMapFallbackText}>
+                {customerLocation
+                  ? "تم تحديد موقع العميل. اضغط بدء الملاحة لفتحه في Google Maps."
+                  : "الخريطة إضافة اختيارية. الصق رابط موقع العميل أعلاه ثم اضغط تطبيق الموقع."}
+              </Text>
+            </View>
           )}
 
           <View style={styles.mapFooter}>
@@ -3948,6 +3912,22 @@ const styles = StyleSheet.create({
   nativeMap: {
     width: "100%",
     height: 150,
+  },
+
+  nativeMapFallback: {
+    backgroundColor: "#F8F1E8",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 18,
+  },
+
+  nativeMapFallbackText: {
+    color: MUTED,
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: 18,
+    marginTop: 7,
   },
 
   webMap: {
