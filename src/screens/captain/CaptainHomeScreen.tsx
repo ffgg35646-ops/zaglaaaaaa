@@ -1561,6 +1561,7 @@ export default function CaptainHomeScreen() {
           assignment: {
             ...(previous?.assignment || {}),
             shiftId: selectedShift,
+            changedAt: new Date().toISOString(),
           },
           shift: selectedShift,
         }));
@@ -1570,6 +1571,7 @@ export default function CaptainHomeScreen() {
           assignment: {
             ...(previous?.assignment || {}),
             shiftId: newShiftId,
+            changedAt: new Date().toISOString(),
           },
         }));
       }
