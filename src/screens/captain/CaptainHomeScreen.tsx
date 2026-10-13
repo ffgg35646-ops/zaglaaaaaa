@@ -1960,8 +1960,16 @@ export default function CaptainHomeScreen() {
           setAttendance({ attendance: [result.attendance] });
         }
       })
-      .catch(() => {
-        // Intentionally silent: the UI confirmation is immediate by design.
+      .catch((error: any) => {
+        // Keep the fast UI response, but do not pretend the admin/server saved
+        // the attendance if the background request actually failed.
+        setAttendanceJustCompleted(false);
+        Alert.alert(
+          "تعذر حفظ الحضور",
+          error?.response?.data?.message ||
+            error?.response?.data?.error ||
+            "لم يؤكد الخادم تسجيل الحضور. تحقق من الاتصال وحاول مرة أخرى.",
+        );
       })
       .finally(() => {
         setAttendanceLoading(false);
