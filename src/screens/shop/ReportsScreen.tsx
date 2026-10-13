@@ -5,7 +5,6 @@ import React, {
   useState,
 } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -63,7 +62,7 @@ export default function ShopReportsScreen() {
   const [toDate, setToDate] = useState("");
   const [search, setSearch] = useState("");
 
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
@@ -247,22 +246,6 @@ export default function ShopReportsScreen() {
 
   const orders = report?.orders ?? {};
   const revenue = report?.revenue ?? {};
-
-  if (loading) {
-    return (
-      <Screen>
-        <View style={styles.loading}>
-          <ActivityIndicator
-            size="large"
-            color={appTheme.primaryColor}
-          />
-          <Text style={styles.loadingText}>
-            جاري تحميل التقارير...
-          </Text>
-        </View>
-      </Screen>
-    );
-  }
 
   return (
     <Screen>
