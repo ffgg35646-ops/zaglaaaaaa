@@ -2,27 +2,21 @@ import React from "react";
 import {
   ActivityIndicator,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 import { useAppTheme } from "../theme/useAppTheme";
 
-export default function LoadingState({
-  message = "جاري تحميل البيانات...",
-}: {
-  message?: string;
-}) {
+export default function LoadingState() {
   const appTheme = useAppTheme();
   const styles = createStyles(appTheme);
 
+  // Compact placeholder only; screens with existing data keep it on screen.
   return (
     <View style={styles.container}>
       <ActivityIndicator
-        size="large"
+        size="small"
         color={appTheme.primaryColor}
       />
-
-      <Text style={styles.text}>{message}</Text>
     </View>
   );
 }
@@ -30,15 +24,9 @@ export default function LoadingState({
 const createStyles = (appTheme: ReturnType<typeof useAppTheme>) =>
   StyleSheet.create({
     container: {
-      flex: 1,
+      minHeight: 48,
       justifyContent: "center",
       alignItems: "center",
-      padding: 24,
-    },
-    text: {
-      marginTop: 12,
-      color: appTheme.secondaryTextColor,
-      fontSize: 14,
-      textAlign: "center",
+      paddingVertical: 12,
     },
   });
