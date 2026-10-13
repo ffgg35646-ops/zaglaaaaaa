@@ -1,5 +1,4 @@
 import SupportQuickAccess from "../../components/shared/SupportQuickAccess";
-import { useShiftSelectionStore } from "../../store/shiftSelectionStore";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -853,13 +852,7 @@ function CaptainMotorcycleIllustration() {
 }
 
 export default function CaptainHomeScreen() {
-  const selectedShiftFromStore =
-    useShiftSelectionStore(
-      (state) => state.selectedShift,
-    );
-
-
-  const [supportNotificationCount, setSupportNotificationCount] =
+    const [supportNotificationCount, setSupportNotificationCount] =
     useState(0);
 
   const [supportNotificationVisible, setSupportNotificationVisible] =
@@ -973,10 +966,6 @@ export default function CaptainHomeScreen() {
   const [availableOrdersCount, setAvailableOrdersCount] =
     useState(0);
 
-  const [shiftClockNow, setShiftClockNow] =
-    useState(() => Date.now());
-
-
 
   const orders = useMemo(
     () => getOrders(capacity),
@@ -1008,69 +997,13 @@ export default function CaptainHomeScreen() {
   const weeklyAssignment =
     shift?.assignment || null;
 
+  // Server state is authoritative; stale local choices cannot lock an expired shift.
   const selectedWeeklyShiftId = String(
-    selectedShiftFromStore?._id ??
-      selectedShiftFromStore?.id ??
-      weeklyAssignment?.shiftId?._id ??
+    weeklyAssignment?.shiftId?._id ??
       weeklyAssignment?.shiftId?.id ??
       weeklyAssignment?.shiftId ??
       "",
   );
-
-  const currentShift =
-    shift?.shift || shift;
-
-  const shiftStart =
-    currentShift?.startTime ||
-    currentShift?.start ||
-    "";
-
-  const shiftEnd =
-    currentShift?.endTime ||
-    currentShift?.end ||
-    "";
-
-  const isNowInsideShift = (
-    startTime: string,
-    endTime: string,
-  ) => {
-    if (!startTime || !endTime) {
-      return false;
-    }
-
-    const parseTime = (value: string) => {
-      const [hours, minutes] = String(value)
-        .split(":")
-        .map(Number);
-
-      if (
-        !Number.isFinite(hours) ||
-        !Number.isFinite(minutes)
-      ) {
-        return null;
-      }
-
-      return hours * 60 + minutes;
-    };
-
-    const start = parseTime(startTime);
-    const end = parseTime(endTime);
-
-    if (start === null || end === null) {
-      return false;
-    }
-
-    const now = new Date(shiftClockNow);
-    const current =
-      now.getHours() * 60 +
-      now.getMinutes();
-
-    if (start <= end) {
-      return current >= start && current < end;
-    }
-
-    return current >= start || current < end;
-  };
 
   const shiftSelected =
     Boolean(
@@ -1078,37 +1011,14 @@ export default function CaptainHomeScreen() {
       selectedWeeklyShiftId,
     );
 
-  const insideShift =
-    Boolean(shiftSelected) &&
-    isNowInsideShift(
-      String(shiftStart),
-      String(shiftEnd),
-    );
-
-  useEffect(() => {
-    setShiftClockNow(Date.now());
-
-    const timer = setInterval(() => {
-      setShiftClockNow(Date.now());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-
-
   const selectedWeeklyShift =
-    selectedShiftFromStore ||
-    (weeklyAssignment?.shiftId &&
+    weeklyAssignment?.shiftId &&
     typeof weeklyAssignment.shiftId === "object"
       ? weeklyAssignment.shiftId
       : shift?.shift &&
           typeof shift.shift === "object"
         ? shift.shift
-        : currentShift &&
-            typeof currentShift === "object"
-          ? currentShift
-          : null);
+        : null;
 
   const selectedShiftTimeLabel =
     selectedWeeklyShift?.startTime &&
@@ -2050,8 +1960,16 @@ export default function CaptainHomeScreen() {
           setAttendance({ attendance: [result.attendance] });
         }
       })
-      .catch(() => {
-        // Intentionally silent: the UI confirmation is immediate by design.
+      .catch((error: any) => {
+        // Keep the fast UI response, but do not pretend the admin/server saved
+        // the attendance if the background request actually failed.
+        setAttendanceJustCompleted(false);
+        Alert.alert(
+          "تعذر حفظ الحضور",
+          error?.response?.data?.message ||
+            error?.response?.data?.error ||
+            "لم يؤكد الخادم تسجيل الحضور. تحقق من الاتصال وحاول مرة أخرى.",
+        );
       })
       .finally(() => {
         setAttendanceLoading(false);
