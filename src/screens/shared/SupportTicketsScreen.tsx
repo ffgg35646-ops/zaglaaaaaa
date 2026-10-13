@@ -167,13 +167,10 @@ export default function SupportTicketsScreen({
     }
   }
 
-  if (loading) {
+  if (loading && !ticket) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator />
-        <Text style={styles.muted}>
-          جاري تحميل التذكرة...
-        </Text>
+        <ActivityIndicator size="small" />
       </View>
     );
   }
