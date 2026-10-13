@@ -156,6 +156,12 @@ export default function AppNavigator() {
             logout();
           }
         }
+      } catch (error: any) {
+        // A corrupt profile cache or storage failure must never crash the app.
+        console.error(
+          "ZAJEL SESSION RESTORE ERROR:",
+          error?.message || error,
+        );
       } finally {
         if (active) setHydrated(true);
       }
