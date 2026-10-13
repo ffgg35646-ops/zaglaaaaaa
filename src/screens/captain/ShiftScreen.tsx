@@ -100,6 +100,8 @@ export default function ShiftScreen() {
 
   const [shifts, setShifts] = useState<any[]>([]);
   const [assignment, setAssignment] = useState<any>(null);
+  const [canSelectNewShift, setCanSelectNewShift] = useState(false);
+  const [nextChangeAt, setNextChangeAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const savingRef = useRef(false);
@@ -160,10 +162,9 @@ const selectedShiftId = String(
 
       setShifts(getShifts(shiftsResult));
 
-      setAssignment(
-        currentResult?.assignment ??
-          null,
-      );
+      setAssignment(currentResult?.assignment ?? null);
+      setCanSelectNewShift(Boolean(currentResult?.canSelectNewShift));
+      setNextChangeAt(currentResult?.nextChangeAt ?? null);
     } catch (error: any) {
       if (background) {
         return;
@@ -195,7 +196,7 @@ const selectedShiftId = String(
       return;
     }
 
-    if (selectedShiftId) {
+    if (selectedShiftId && !canSelectNewShift) {
       setActionMessage(
         "تم تثبيت الشفت لمدة 7 أيام، ولا يمكن تغييره خلال هذه المدة.",
       );
@@ -223,7 +224,7 @@ const selectedShiftId = String(
       setSelectedShift(selectedShift);
 
       setActionMessage(
-        "✅ تم اختيار الشفت وتثبيته لمدة 7 أيام.",
+        "✅ تم حفظ الشفت. يمكنك تغييره بعد 7 أيام، وسيظل فعالًا حتى تغيّره.",
       );
 
       await load();
@@ -246,6 +247,7 @@ const selectedShiftId = String(
     }
   }
 
+  const shiftLocked = Boolean(selectedShiftId && !canSelectNewShift);
   const orderedShifts = selectedShiftId
     ? [
         ...shifts.filter(
@@ -345,11 +347,8 @@ const selectedShiftId = String(
                     textAlign: "center",
                   }}
                 >
-                  تم تثبيت الشفت الحالي.
-                  {"\n"}
-                  لا يمكن تغييره خلال مدة الـ7 أيام الحالية.
-                  {"\n"}
-                  سيظهر اختيار شفت جديد بعد انتهاء المدة.
+                  {shiftLocked ? "لا يمكن تغيير هذا الشفت خلال أول 7 أيام من اختياره." : "يمكنك تغيير الشفت الآن أو الاحتفاظ بالشفت الحالي؛ سيستمر دون تجديد."}
+                  {shiftLocked && nextChangeAt ? `\nيتاح التغيير: ${new Date(nextChangeAt).toLocaleString("ar-IQ-u-nu-latn", { timeZone: "Asia/Baghdad", dateStyle: "medium", timeStyle: "short" })} بتوقيت العراق` : ""}
                 </Text>
               </View>
             ) : null}
@@ -380,7 +379,7 @@ const selectedShiftId = String(
                   key={id}
                   disabled={
                     Boolean(savingId) ||
-                    Boolean(selectedShiftId) ||
+                    shiftLocked ||
                     selected
                   }
                   activeOpacity={0.82}
@@ -393,7 +392,7 @@ const selectedShiftId = String(
                       styles.shiftCardSelected,
                     selected &&
                       styles.shiftCardSelectedLarge,
-                    selectedShiftId &&
+                    shiftLocked &&
                       !selected &&
                       {
                         opacity: 0.45,
