@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -14,7 +13,7 @@ import { getLeaderCaptains } from "../../api/leader";
 
 export default function LeaderCaptainsScreen() {
   const [captains, setCaptains] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
@@ -34,19 +33,6 @@ export default function LeaderCaptainsScreen() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  if (loading) {
-    return (
-      <Screen>
-        <View style={styles.center}>
-          <ActivityIndicator
-            size="large"
-            color="#FF6A00"
-          />
-        </View>
-      </Screen>
-    );
-  }
 
   return (
     <Screen>
