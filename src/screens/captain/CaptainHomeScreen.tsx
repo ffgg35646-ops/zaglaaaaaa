@@ -198,6 +198,7 @@ function formatTime(value: any) {
   }
 
   return date.toLocaleTimeString("ar-IQ-u-nu-latn", {
+    timeZone: "Asia/Baghdad",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -214,6 +215,7 @@ function formatDate(value: any) {
   }
 
   return date.toLocaleDateString("ar-IQ-u-nu-latn", {
+    timeZone: "Asia/Baghdad",
     day: "numeric",
     month: "long",
   });
@@ -1191,6 +1193,7 @@ export default function CaptainHomeScreen() {
 
   const todayLabel =
     new Intl.DateTimeFormat("ar-IQ-u-nu-latn", {
+      timeZone: "Asia/Baghdad",
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -1269,9 +1272,12 @@ export default function CaptainHomeScreen() {
     setShiftSaving(true);
 
     try {
-      await selectWeeklyShift(newShiftId);
+      const selectionResponse = await selectWeeklyShift(newShiftId);
+      const savedAssignment = selectionResponse?.data ?? {};
+      const selectedAt = savedAssignment?.changedAt ?? savedAssignment?.createdAt ?? savedAssignment?.weekStart ?? new Date().toISOString();
+      const nextChangeAt = new Date(new Date(selectedAt).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      // فتح الكارت فورًا بمجرد نجاح اختيار الشفت.
+      // فتح الكارت وقفل التغيير فور نجاح الحفظ، من دون انتظار تحديث الخلفية.
       setShiftCardOpen(true);
 
       const selectedShift =
@@ -1280,24 +1286,17 @@ export default function CaptainHomeScreen() {
             String(item?._id ?? item?.id ?? "") === newShiftId
         ) || null;
 
-      if (selectedShift) {
-        setShift((previous: any) => ({
-          ...(previous || {}),
-          assignment: {
-            ...(previous?.assignment || {}),
-            shiftId: selectedShift,
-          },
-          shift: selectedShift,
-        }));
-      } else {
-        setShift((previous: any) => ({
-          ...(previous || {}),
-          assignment: {
-            ...(previous?.assignment || {}),
-            shiftId: newShiftId,
-          },
-        }));
-      }
+      setShift((previous: any) => ({
+        ...(previous || {}),
+        canSelectNewShift: false,
+        nextChangeAt,
+        assignment: {
+          ...(previous?.assignment || {}),
+          ...(savedAssignment || {}),
+          shiftId: selectedShift || newShiftId,
+        },
+        shift: selectedShift || previous?.shift || null,
+      }));
 
       setShiftPickerOpen(false);
       void loadData();
@@ -2053,7 +2052,7 @@ export default function CaptainHomeScreen() {
                       marginTop: 4,
                     }}
                   >
-                    شفتات الإدارة المتاحة لهذا الأسبوع
+                    شفتات الإدارة المتاحة
                   </Text>
                 </View>
               </View>
@@ -2165,8 +2164,25 @@ export default function CaptainHomeScreen() {
                       {"\n"}
                       {canChangeShift
                         ? "يمكنك تغيير الشفت الآن أو الاستمرار بالشفت الحالي."
-                        : "لا يمكن تغيير الشفت قبل مرور 7 أيام من وقت اختياره بتوقيت بغداد."}
+                        : "لا يمكن تغيير الشفت قبل مرور 7 أيام كاملة من وقت اختياره بتوقيت بغداد."}
                     </Text>
+                    {!canChangeShift && shift?.nextChangeAt ? (
+                      <Text
+                        style={{
+                          marginTop: 5,
+                          color: "#6B7280",
+                          fontSize: 11,
+                          fontWeight: "700",
+                          textAlign: "center",
+                        }}
+                      >
+                        موعد إتاحة التغيير: {new Intl.DateTimeFormat("ar-IQ-u-nu-latn", {
+                          timeZone: "Asia/Baghdad",
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(new Date(shift.nextChangeAt))}
+                      </Text>
+                    ) : null}
                   </View>
                 ) : null}
                 {availableShifts.map((item) => {
@@ -2209,13 +2225,13 @@ export default function CaptainHomeScreen() {
                         borderRadius: 18,
                         borderWidth: 1,
                         borderColor:
-                          selectedWeeklyShiftId
+                          selectedWeeklyShiftId && !canChangeShift
                             ? "#D1D5DB"
                             : isSelected
                               ? "#FDBA74"
                               : "#E8DED7",
                         backgroundColor:
-                          selectedWeeklyShiftId
+                          selectedWeeklyShiftId && !canChangeShift
                             ? "#F3F4F6"
                             : isSelected
                               ? "#FFF7ED"
@@ -2239,7 +2255,7 @@ export default function CaptainHomeScreen() {
                           <Text
                             style={{
                               color:
-                                selectedWeeklyShiftId
+                                selectedWeeklyShiftId && !canChangeShift
                                   ? "#9CA3AF"
                                   : TEXT,
                               fontSize: 16,
@@ -2269,7 +2285,7 @@ export default function CaptainHomeScreen() {
                             <Text
                               style={{
                                 color:
-                                selectedWeeklyShiftId
+                                selectedWeeklyShiftId && !canChangeShift
                                   ? "#9CA3AF"
                                   : "#5F5147",
                               fontSize: 13,
@@ -2310,7 +2326,7 @@ export default function CaptainHomeScreen() {
                             alignItems: "center",
                             justifyContent: "center",
                             backgroundColor:
-                              selectedWeeklyShiftId
+                              selectedWeeklyShiftId && !canChangeShift
                                 ? "#D1D5DB"
                                 : isSelected
                                   ? "#F3E8DD"
@@ -2322,7 +2338,7 @@ export default function CaptainHomeScreen() {
                           <Text
                             style={{
                               color:
-                                selectedWeeklyShiftId
+                                selectedWeeklyShiftId && !canChangeShift
                                   ? "#6B7280"
                                   : isSelected
                                     ? "#8D8175"
@@ -2331,12 +2347,10 @@ export default function CaptainHomeScreen() {
                               fontWeight: "900",
                             }}
                           >
-                            {selectedWeeklyShiftId
-                              ? isSelected
-                                ? "الحالي"
-                                : "مغلق"
-                              : isSelected
-                                ? "الحالي"
+                            {isSelected
+                              ? "الحالي"
+                              : selectedWeeklyShiftId && !canChangeShift
+                                ? "مغلق"
                                 : "اختيار"}
                           </Text>
                         </Pressable>
