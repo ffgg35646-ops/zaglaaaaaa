@@ -297,16 +297,12 @@ const selectedShiftId = String(
         ) : null}
 
 
-        {loading ? (
-          <View style={styles.loading}>
+        {loading && shifts.length === 0 ? (
+          <View style={[styles.loading, { paddingVertical: 12 }]}>
             <ActivityIndicator
               size="small"
               color="#F97316"
             />
-
-            <Text style={styles.loadingText}>
-              جاري تحميل الشفتات...
-            </Text>
           </View>
         ) : shifts.length === 0 ? (
           <View style={styles.empty}>

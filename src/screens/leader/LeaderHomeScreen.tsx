@@ -5,7 +5,6 @@ import React, {
   useState,
 } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   SafeAreaView,
@@ -511,8 +510,7 @@ export default function LeaderHomeScreen() {
   const [ordersPage, setOrdersPage] =
     useState(1);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [, setLoading] = useState(true);
 
   const [refreshing, setRefreshing] =
     useState(false);
@@ -785,22 +783,6 @@ export default function LeaderHomeScreen() {
           ),
         )
       : 0;
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.loading}>
-          <ActivityIndicator
-            size="small"
-            color="#111111"
-          />
-          <Text style={styles.loadingText}>
-            جاري تحميل لوحة زاجل...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   const renderResults = () => {
     if (resultData.items.length === 0) {

@@ -1919,13 +1919,8 @@ export default function CaptainHomeScreen() {
           ? shiftsResponse.data
           : [],
       );
-    } catch (error: any) {
-      Alert.alert(
-        "تعذر تحميل الشفتات",
-        error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          "تعذر تحميل الشفتات المتاحة حاليًا.",
-      );
+    } catch {
+      // Keep the current shift list visible if the background refresh fails.
     } finally {
       setShiftPickerLoading(false);
     }
@@ -2026,72 +2021,41 @@ export default function CaptainHomeScreen() {
     );
 
   async function handleCheckIn() {
-    if (
-      !user?.id ||
-      !shiftSelected ||
-      (hasTodayAttendance || attendanceJustCompleted) ||
-      attendanceLoading
-    ) {
+    if (!user?.id || attendanceLoading) {
       return;
     }
 
-    try {
-      setAttendanceLoading(true);
-
-      await attendanceIn();
+    if (hasTodayAttendance || attendanceJustCompleted) {
       setAttendanceJustCompleted(true);
-
       Alert.alert(
         "تم تسجيل الحضور",
-        "تم تسجيل حضورك للشفت بنجاح.",
+        "تم تسجيل حضورك بالفعل.",
       );
-
-      void loadData();
-    } catch (error: any) {
-      if (
-        error?.response?.status === 409 &&
-        error?.response?.data?.attendance
-      ) {
-        setAttendance({
-          attendance: [error.response.data.attendance],
-        });
-        setAttendanceJustCompleted(true);
-        Alert.alert(
-          "تم تسجيل الحضور بالفعل",
-          error?.response?.data?.message ||
-            "تم تسجيل حضورك اليوم بالفعل.",
-        );
-        return;
-      }
-
-      const attendanceErrorCode = String(
-        error?.response?.data?.error ||
-          error?.response?.data?.code ||
-          "",
-      );
-      const attendanceErrorMessage =
-        error?.response?.data?.message ||
-        ({
-          CAPTAIN_HAS_NO_WEEKLY_SHIFT:
-            "اختَر الشفت أولًا من صفحة الشفت، ثم سجّل الحضور.",
-          CAPTAIN_SHIFT_INACTIVE:
-            "الشفت المختار غير فعال حاليًا. راجع صفحة الشفت.",
-          CAPTAIN_OUTSIDE_SHIFT:
-            "تسجيل الحضور غير متاح خارج وقت الشفت.",
-          ALREADY_CLOCKED_IN:
-            "تم تسجيل حضورك اليوم بالفعل.",
-        } as Record<string, string>)[attendanceErrorCode] ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "حدث خطأ أثناء تسجيل الحضور.";
-
-      Alert.alert(
-        "تعذر تسجيل الحضور",
-        attendanceErrorMessage,
-      );
-    } finally {
-      setAttendanceLoading(false);
+      return;
     }
+
+    // Confirm instantly in the UI. Attendance must never gate shifts or orders.
+    setAttendanceJustCompleted(true);
+    setAttendanceLoading(true);
+    Alert.alert(
+      "تم تسجيل الحضور",
+      "تم تسجيل حضورك.",
+    );
+
+    // Persist the attendance record in the background. API/time/shift errors
+    // must not block or interrupt the captain's workflow.
+    void attendanceIn()
+      .then((result: any) => {
+        if (result?.attendance) {
+          setAttendance({ attendance: [result.attendance] });
+        }
+      })
+      .catch(() => {
+        // Intentionally silent: the UI confirmation is immediate by design.
+      })
+      .finally(() => {
+        setAttendanceLoading(false);
+      });
   }
 
   // Customer destinations may be coordinates or Google Maps shared URLs.
@@ -2385,8 +2349,6 @@ export default function CaptainHomeScreen() {
           <Pressable
             onPress={handleCheckIn}
             disabled={
-              !shiftSelected ||
-              !insideShift ||
               (hasTodayAttendance || attendanceJustCompleted) ||
               attendanceLoading
             }
@@ -2394,8 +2356,6 @@ export default function CaptainHomeScreen() {
               styles.attendanceActionButton,
               styles.attendanceCheckInButton,
               (
-                !shiftSelected ||
-                !insideShift ||
                 (hasTodayAttendance || attendanceJustCompleted) ||
                 attendanceLoading
               ) && styles.attendanceDisabledButton,
@@ -2405,36 +2365,25 @@ export default function CaptainHomeScreen() {
               },
             ]}
           >
-            {attendanceLoading ? (
-              <ActivityIndicator
-                size="small"
-                color="#FFFFFF"
-              />
-            ) : (
-              <>
-                <View style={styles.attendanceActionIcon}>
-                  <Ionicons
-                    name={
-                      (hasTodayAttendance || attendanceJustCompleted)
-                        ? "checkmark-circle-outline"
-                        : "log-in-outline"
-                    }
-                    size={20}
-                    color="#FFFFFF"
-                  />
-                </View>
+            <>
+              <View style={styles.attendanceActionIcon}>
+                <Ionicons
+                  name={
+                    (hasTodayAttendance || attendanceJustCompleted)
+                      ? "checkmark-circle-outline"
+                      : "log-in-outline"
+                  }
+                  size={20}
+                  color="#FFFFFF"
+                />
+              </View>
 
-                <Text style={styles.attendanceActionTitle}>
-                  {(hasTodayAttendance || attendanceJustCompleted)
-                    ? "تم تسجيل حضورك"
-                    : !shiftSelected
-                      ? "اختر الشفت أولًا"
-                      : !insideShift
-                        ? "غير متاح الآن"
-                        : "تسجيل الحضور"}
-                </Text>
-              </>
-            )}
+              <Text style={styles.attendanceActionTitle}>
+                {(hasTodayAttendance || attendanceJustCompleted)
+                  ? "تم تسجيل حضورك"
+                  : "تسجيل الحضور"}
+              </Text>
+            </>
           </Pressable>
         </View>
 
@@ -3018,28 +2967,18 @@ export default function CaptainHomeScreen() {
               </Pressable>
             </View>
 
-            {shiftPickerLoading ? (
+            {shiftPickerLoading && availableShifts.length === 0 ? (
               <View
                 style={{
-                  minHeight: 230,
+                  minHeight: 76,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
                 <ActivityIndicator
-                  size="large"
+                  size="small"
                   color={ORANGE}
                 />
-
-                <Text
-                  style={{
-                    marginTop: 12,
-                    color: MUTED,
-                    fontWeight: "800",
-                  }}
-                >
-                  جاري تحميل الشفتات...
-                </Text>
               </View>
             ) : availableShifts.length === 0 ? (
               <View

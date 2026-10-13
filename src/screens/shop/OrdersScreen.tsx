@@ -23,7 +23,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 
 import Screen from "../../components/Screen";
-import LoadingState from "../../components/LoadingState";
 import OrderStatusBadge from "../../components/OrderStatusBadge";
 import { getOrder, getOrders } from "../../api/orders";
 import { getOrderCaptainRating } from "../../api/ratingRuntime";
@@ -269,7 +268,7 @@ export default function ShopOrdersScreen() {
   const navigation = useNavigation<any>();
 
   const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const [historyPage, setHistoryPage] = useState(1);
@@ -1377,19 +1376,6 @@ return (
 
         {expanded && renderOrderDetails(order)}
       </View>
-    );
-  }
-
-  if (loading) {
-    return (
-      <Screen>
-        <LoadingState message="جاري تحميل الطلبات..." />
-  
-
-
-
-
-    </Screen>
     );
   }
 

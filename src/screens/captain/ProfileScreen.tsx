@@ -670,11 +670,7 @@ export default function CaptainProfileScreen() {
             </View>
 
             {ratingLoading && !ratingData ? (
-              <View style={styles.ratingModalLoading}>
-                <Text style={styles.ratingModalLoadingText}>
-                  جاري تحميل التقييمات...
-                </Text>
-              </View>
+              <View style={styles.ratingModalLoading} />
             ) : !ratingData?.ratings?.length ? (
               <View style={styles.ratingEmpty}>
                 <View style={styles.ratingEmptyIcon}>

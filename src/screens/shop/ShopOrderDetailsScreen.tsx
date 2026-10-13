@@ -147,10 +147,10 @@ export default function ShopOrderDetailsScreen() {
     });
   }
 
-  if (loading) {
+  if (loading && !order) {
     return (
       <Screen>
-        <LoadingState message="جاري تحميل تفاصيل الطلب..." />
+        <LoadingState />
       </Screen>
     );
   }

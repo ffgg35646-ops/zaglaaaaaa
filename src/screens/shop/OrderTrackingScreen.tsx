@@ -184,10 +184,10 @@ return () => clearInterval(timer);
     });
   }
 
-  if (loading) {
+  if (loading && !order) {
     return (
       <Screen>
-        <LoadingState message="جاري تحميل حالة الطلب..." />
+        <LoadingState />
       </Screen>
     );
   }

@@ -332,7 +332,7 @@ export default function CaptainOrderBoard({
     useState<string | null>(null);
 
   const [loading, setLoading] =
-    useState(true);
+    useState(false);
 
   const [rejectVisible, setRejectVisible] =
     useState(false);
@@ -391,12 +391,7 @@ export default function CaptainOrderBoard({
             : DEFAULT_MAX_ORDERS
         );
       } catch {
-        if (showLoader) {
-          Alert.alert(
-            "تعذر تحديث الطلبات",
-            "حدث خطأ أثناء تحميل الطلبات.",
-          );
-        }
+        // Background polling failures must not interrupt the order board.
       } finally {
         if (showLoader) {
           setLoading(false);

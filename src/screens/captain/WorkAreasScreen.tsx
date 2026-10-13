@@ -116,16 +116,12 @@ export default function WorkAreasScreen() {
           </View>
         </View>
 
-        {loading ? (
-          <View style={styles.loadingCard}>
+        {loading && areas.length === 0 ? (
+          <View style={[styles.loadingCard, { paddingVertical: 12 }]}>
             <ActivityIndicator
               size="small"
               color={appTheme.primaryColor}
             />
-
-            <Text style={styles.loadingText}>
-              جاري تحميل مناطق العمل...
-            </Text>
           </View>
         ) : areas.length === 0 ? (
           <View style={styles.emptyCard}>
