@@ -11,7 +11,6 @@ import {
 } from "react-native";
 
 import Screen from "../../components/Screen";
-import LoadingState from "../../components/LoadingState";
 import {
   getNotifications,
   markAllNotificationsRead,
@@ -22,7 +21,7 @@ export default function NotificationsScreen() {
   const appTheme = useAppTheme();
   const styles = createStyles(appTheme);
   const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -62,14 +61,6 @@ export default function NotificationsScreen() {
           "تعذر تحديث الإشعارات."
       );
     }
-  }
-
-  if (loading) {
-    return (
-      <Screen>
-        <LoadingState message="جاري تحميل الإشعارات..." />
-      </Screen>
-    );
   }
 
   return (
