@@ -212,11 +212,7 @@ export default function SupportQuickSupportScreen() {
               التذاكر المفتوحة
             </Text>
 
-            {ticketsLoading ? (
-              <Text style={styles.ticketsMuted}>
-                جاري تحميل التذاكر...
-              </Text>
-            ) : tickets.length === 0 ? (
+            {ticketsLoading && tickets.length === 0 ? null : tickets.length === 0 ? (
               <Text style={styles.ticketsMuted}>
                 لا توجد تذاكر مفتوحة حاليًا.
               </Text>
