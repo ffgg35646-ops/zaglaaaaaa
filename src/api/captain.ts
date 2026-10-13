@@ -21,9 +21,12 @@ export async function checkShift() {
   return response.data;
 }
 
-export async function attendanceIn(captainId: string) {
+export async function attendanceIn() {
+  // The API identifies the captain from the authenticated token.
+  // This avoids using the legacy requirements endpoint, whose shift checks
+  // can disagree with the current weekly-shift assignment.
   const response = await api.post(
-    `/requirements/captains/${captainId}/attendance/in`
+    "/captain-attendance/check-in"
   );
   return response.data;
 }
