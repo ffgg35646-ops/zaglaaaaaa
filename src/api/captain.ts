@@ -31,10 +31,10 @@ export async function attendanceIn() {
   return response.data;
 }
 
-export async function attendanceOut(captainId: string) {
-  const response = await api.post(
-    `/requirements/captains/${captainId}/attendance/out`
-  );
+export async function attendanceOut(_captainId?: string) {
+  // Pair with the dedicated attendance endpoint so local day boundaries use Baghdad
+  // and clock-out has the same no-shift/no-attendance-gate semantics as check-in.
+  const response = await api.post("/captain-attendance/check-out");
   return response.data;
 }
 
