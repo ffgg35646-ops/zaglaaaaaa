@@ -100,6 +100,8 @@ export default function ShiftScreen() {
 
   const [shifts, setShifts] = useState<any[]>([]);
   const [assignment, setAssignment] = useState<any>(null);
+  const [canSelectNewShift, setCanSelectNewShift] = useState(false);
+  const [nextChangeAt, setNextChangeAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const savingRef = useRef(false);
@@ -160,10 +162,11 @@ const selectedShiftId = String(
 
       setShifts(getShifts(shiftsResult));
 
-      setAssignment(
-        currentResult?.assignment ??
-          null,
-      );
+      if (currentResult) {
+        setAssignment(currentResult.assignment ?? null);
+        setCanSelectNewShift(Boolean(currentResult.canSelectNewShift));
+        setNextChangeAt(currentResult.nextChangeAt ?? null);
+      }
     } catch (error: any) {
       if (background) {
         return;
@@ -195,9 +198,9 @@ const selectedShiftId = String(
       return;
     }
 
-    if (selectedShiftId) {
+    if (selectedShiftId && !canSelectNewShift) {
       setActionMessage(
-        "تم تثبيت الشفت لمدة 7 أيام، ولا يمكن تغييره خلال هذه المدة.",
+        "لا يمكن تغيير الشفت قبل مرور 7 أيام من وقت آخر اختيار بتوقيت العراق.",
       );
       return;
     }
@@ -223,7 +226,7 @@ const selectedShiftId = String(
       setSelectedShift(selectedShift);
 
       setActionMessage(
-        "✅ تم اختيار الشفت وتثبيته لمدة 7 أيام.",
+        "✅ تم حفظ الشفت. يستمر حتى تغيّره بنفسك، ويمكن تغييره بعد 7 أيام.",
       );
 
       await load();
@@ -347,9 +350,10 @@ const selectedShiftId = String(
                 >
                   تم تثبيت الشفت الحالي.
                   {"\n"}
-                  لا يمكن تغييره خلال مدة الـ7 أيام الحالية.
-                  {"\n"}
-                  سيظهر اختيار شفت جديد بعد انتهاء المدة.
+                  {canSelectNewShift
+                    ? "يمكنك الآن تغيير الشفت أو الاستمرار بالشفت الحالي دون أي إجراء."
+                    : "لا يمكن تغيير الشفت حتى مرور 7 أيام كاملة من وقت الاختيار بتوقيت بغداد."}
+                  {!canSelectNewShift && nextChangeAt ? `\nموعد إتاحة التغيير: ${new Intl.DateTimeFormat("ar-IQ-u-nu-latn", { timeZone: "Asia/Baghdad", dateStyle: "medium", timeStyle: "short" }).format(new Date(nextChangeAt))}` : ""}
                 </Text>
               </View>
             ) : null}
@@ -380,7 +384,7 @@ const selectedShiftId = String(
                   key={id}
                   disabled={
                     Boolean(savingId) ||
-                    Boolean(selectedShiftId) ||
+                    (Boolean(selectedShiftId) && !canSelectNewShift) ||
                     selected
                   }
                   activeOpacity={0.82}
@@ -394,6 +398,7 @@ const selectedShiftId = String(
                     selected &&
                       styles.shiftCardSelectedLarge,
                     selectedShiftId &&
+                      !canSelectNewShift &&
                       !selected &&
                       {
                         opacity: 0.45,
