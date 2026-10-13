@@ -5,7 +5,6 @@ import React, {
   useState,
 } from "react";
 import {
-  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -254,8 +253,7 @@ export default function LeaderOrdersScreen() {
     useState<Group>("all");
   const [selectedOrder, setSelectedOrder] =
     useState<OrderRow | null>(null);
-  const [loading, setLoading] =
-    useState(true);
+  const [, setLoading] = useState(true);
   const [searching, setSearching] =
     useState(false);
   const [error, setError] =
@@ -414,23 +412,6 @@ export default function LeaderOrdersScreen() {
     setFilter(group);
     setQuery("");
     setSelectedOrder(order);
-  }
-
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator
-          size="large"
-        />
-        <Text
-          style={
-            styles.centerText
-          }
-        >
-          جاري تحميل الطلبات...
-        </Text>
-      </View>
-    );
   }
 
   return (
