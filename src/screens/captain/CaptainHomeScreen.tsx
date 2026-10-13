@@ -1206,10 +1206,7 @@ export default function CaptainHomeScreen() {
    *
    * الـBackend هو صاحب القرار النهائي دائمًا.
    */
-  const shiftChangeUsed =
-    Number(
-      weeklyAssignment?.changeCount || 0,
-    ) >= 1;
+  const canChangeShift = Boolean(shift?.canSelectNewShift);
 
   const cardShiftSelected =
     shiftCardOpen || Boolean(selectedWeeklyShiftId);
@@ -1264,7 +1261,7 @@ export default function CaptainHomeScreen() {
     if (
       !newShiftId ||
       shiftSaving ||
-      selectedWeeklyShiftId
+      (selectedWeeklyShiftId && !canChangeShift)
     ) {
       return;
     }
@@ -1303,6 +1300,7 @@ export default function CaptainHomeScreen() {
       }
 
       setShiftPickerOpen(false);
+      void loadData();
     } catch (error: any) {
       Alert.alert(
         "تعذر اختيار الشفت",
@@ -2165,9 +2163,9 @@ export default function CaptainHomeScreen() {
                     >
                       تم تثبيت الشفت الحالي.
                       {"\n"}
-                      لا يمكن تغييره خلال مدة الـ7 أيام الحالية.
-                      {"\n"}
-                      سيظهر اختيار شفت جديد بعد انتهاء المدة.
+                      {canChangeShift
+                        ? "يمكنك تغيير الشفت الآن أو الاستمرار بالشفت الحالي."
+                        : "لا يمكن تغيير الشفت قبل مرور 7 أيام من وقت اختياره بتوقيت بغداد."}
                     </Text>
                   </View>
                 ) : null}
@@ -2201,7 +2199,7 @@ export default function CaptainHomeScreen() {
 
                   const disabled =
                     shiftSaving ||
-                    Boolean(selectedWeeklyShiftId) ||
+                    (Boolean(selectedWeeklyShiftId) && !canChangeShift) ||
                     isSelected;
 
                   return (
