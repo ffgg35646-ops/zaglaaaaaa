@@ -1189,23 +1189,6 @@ export default function CaptainHomeScreen() {
     };
   }, [user?.id, workArea?._id, workArea?.id]);
 
-  useEffect(() => {
-    if (!location || !customerLocation) {
-      return;
-    }
-
-    void buildRoute(
-      location,
-      customerLocation,
-    );
-  }, [
-    location?.latitude,
-    location?.longitude,
-    customerLocation?.latitude,
-    customerLocation?.longitude,
-  ]);
-
-
   const todayLabel =
     new Intl.DateTimeFormat("ar-IQ-u-nu-latn", {
       weekday: "long",
