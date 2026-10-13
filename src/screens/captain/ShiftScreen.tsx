@@ -106,12 +106,28 @@ export default function ShiftScreen() {
 
   const [actionMessage, setActionMessage] =
     useState("");
-const selectedShiftId = String(
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const selectedShiftId = String(
     assignment?.shiftId?._id ??
       assignment?.shiftId?.id ??
       assignment?.shiftId ??
       "",
   );
+  const selectedAt = (() => {
+    const explicit = new Date(assignment?.changedAt ?? NaN).getTime();
+    if (Number.isFinite(explicit)) return explicit;
+    const legacy = [
+      assignment?.weekStart,
+      assignment?.createdAt,
+      assignment?.updatedAt,
+    ].map((value) => new Date(value ?? NaN).getTime())
+      .filter((value) => Number.isFinite(value));
+    return legacy.length ? Math.max(...legacy) : NaN;
+  })();
+  const shiftChangeLocked =
+    Boolean(selectedShiftId) &&
+    Number.isFinite(selectedAt) &&
+    nowMs < selectedAt + 168 * 60 * 60 * 1000;
 
   async function load() {
     try {
@@ -176,6 +192,8 @@ const selectedShiftId = String(
 
   useEffect(() => {
     void load();
+    const interval = setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => clearInterval(interval);
   }, []);
 
   async function chooseShift(id: string) {
@@ -183,9 +201,9 @@ const selectedShiftId = String(
       return;
     }
 
-    if (selectedShiftId) {
+    if (shiftChangeLocked) {
       setActionMessage(
-        "تم تثبيت الشفت لمدة 7 أيام، ولا يمكن تغييره خلال هذه المدة.",
+        "تم تثبيت الشفت لمدة 7 أيام من وقت اختياره، ويمكن تغييره بعد اكتمال 168 ساعة.",
       );
       return;
     }
@@ -317,7 +335,7 @@ const selectedShiftId = String(
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.list}
           >
-            {selectedShiftId ? (
+            {shiftChangeLocked ? (
               <View
                 style={{
                   marginBottom: 12,
@@ -372,7 +390,7 @@ const selectedShiftId = String(
                   key={id}
                   disabled={
                     Boolean(savingId) ||
-                    Boolean(selectedShiftId) ||
+                    shiftChangeLocked ||
                     selected
                   }
                   activeOpacity={0.82}
@@ -385,7 +403,7 @@ const selectedShiftId = String(
                       styles.shiftCardSelected,
                     selected &&
                       styles.shiftCardSelectedLarge,
-                    selectedShiftId &&
+                    shiftChangeLocked &&
                       !selected &&
                       {
                         opacity: 0.45,
