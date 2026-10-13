@@ -841,6 +841,21 @@ export default function CaptainHomeScreen() {
       weeklyAssignment?.shiftId ??
       "",
   );
+  const shiftSelectedAt = (() => {
+    const explicit = new Date(weeklyAssignment?.changedAt ?? NaN).getTime();
+    if (Number.isFinite(explicit)) return explicit;
+    const legacy = [
+      weeklyAssignment?.weekStart,
+      weeklyAssignment?.createdAt,
+      weeklyAssignment?.updatedAt,
+    ].map((value) => new Date(value ?? NaN).getTime())
+      .filter((value) => Number.isFinite(value));
+    return legacy.length ? Math.max(...legacy) : NaN;
+  })();
+  const shiftChangeLocked =
+    Boolean(selectedWeeklyShiftId) &&
+    Number.isFinite(shiftSelectedAt) &&
+    shiftClockNow < shiftSelectedAt + 168 * 60 * 60 * 1000;
 
   const currentShift =
     shift?.shift || shift;
@@ -1521,7 +1536,7 @@ export default function CaptainHomeScreen() {
     if (
       !newShiftId ||
       shiftSaving ||
-      selectedWeeklyShiftId
+      shiftChangeLocked
     ) {
       return;
     }
@@ -2220,223 +2235,6 @@ export default function CaptainHomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* MAP */}
-        <View style={styles.mapCard}>
-          <View style={styles.mapTitleRow}>
-            <View style={styles.mapTitleSpacer} />
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="موقعك"
-              style={styles.mapLocationButton}
-              onPress={() => {
-                if (location) {
-                  void buildRoute(
-                    location,
-                    customerLocation || location,
-                  );
-                }
-              }}
-            >
-              <Ionicons
-                name="location"
-                size={22}
-                color={ORANGE}
-              />
-            </Pressable>
-          </View>
-
-          <View style={styles.mapTools}>
-            <View style={styles.mapSearchRow}>
-              <TextInput
-                value={mapSearch}
-                onChangeText={setMapSearch}
-                onSubmitEditing={() => {
-                  void searchMapLocation();
-                }}
-                placeholder="ابحث عن منطقة أو عنوان العميل..."
-                placeholderTextColor="#A79B8F"
-                style={styles.mapSearchInput}
-                textAlign="right"
-              />
-
-              <Pressable
-                onPress={() => {
-                  void searchMapLocation();
-                }}
-                style={styles.mapSearchButton}
-              >
-                {mapSearchLoading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color="#FFFFFF"
-                  />
-                ) : (
-                  <Ionicons
-                    name="search-outline"
-                    size={19}
-                    color="#FFFFFF"
-                  />
-                )}
-              </Pressable>
-            </View>
-
-            <View style={styles.mapLinkRow}>
-              <TextInput
-                value={customerLocationLink}
-                onChangeText={
-                  setCustomerLocationLink
-                }
-                placeholder="أو الصق رابط موقع العميل..."
-                placeholderTextColor="#A79B8F"
-                style={styles.customerLinkInput}
-                textAlign="right"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-
-              <Pressable
-                onPress={() => {
-                  void applyCustomerLocationLink();
-                }}
-                style={styles.mapLinkButton}
-              >
-                <Ionicons
-                  name="location-outline"
-                  size={17}
-                  color="#FFFFFF"
-                />
-
-                <Text style={styles.mapLinkButtonText}>
-                  تحديد
-                </Text>
-              </Pressable>
-            </View>
-
-            {searchResults.length > 0 ? (
-              <View style={styles.searchResults}>
-                {searchResults.map(
-                  (result, index) => (
-                    <Pressable
-                      key={`${result?.place_id || index}`}
-                      onPress={() => {
-                        void selectSearchResult(result);
-                      }}
-                      style={styles.searchResult}
-                    >
-                      <Ionicons
-                        name="location-outline"
-                        size={17}
-                        color={ORANGE}
-                      />
-
-                      <Text
-                        style={styles.searchResultText}
-                        numberOfLines={2}
-                      >
-                        {result?.display_name ||
-                          "موقع"}
-                      </Text>
-                    </Pressable>
-                  ),
-                )}
-              </View>
-            ) : null}
-          </View>
-
-          {Platform.OS === "web" ? (
-            <View style={styles.webMap}>
-              {React.createElement("iframe", {
-                title: "Zajel Captain Map",
-                src: mapCenter
-                  ? `https://www.google.com/maps?q=${mapCenter.latitude},${mapCenter.longitude}&z=14&output=embed`
-                  : "https://www.google.com/maps?q=Iraq&z=6&output=embed",
-                style: {
-                  width: "100%",
-                  height: "100%",
-                  border: 0,
-                },
-              })}
-            </View>
-          ) : (
-            <View
-              style={[
-                styles.nativeMap,
-                styles.nativeMapFallback,
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="map-marker-radius-outline"
-                size={30}
-                color={ORANGE}
-              />
-              <Text style={styles.nativeMapFallbackText}>
-                {customerLocation
-                  ? "تم تحديد موقع العميل. اضغط بدء الملاحة لفتحه في Google Maps."
-                  : "الخريطة إضافة اختيارية. الصق رابط موقع العميل أعلاه ثم اضغط تطبيق الموقع."}
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.mapFooter}>
-            <View style={styles.mapLocationInfo}>
-              <View style={styles.liveDot} />
-
-              <Text style={styles.mapLocationText}>
-                {location
-                  ? `منطقتك الحالية · ${
-                      currentPlaceName ||
-                      areaName
-                    }`
-                  : "في انتظار تحديد GPS"}
-              </Text>
-            </View>
-
-            {customerLocation ? (
-              <View style={styles.mapMetricGroup}>
-                <View style={styles.etaBadge}>
-                  <Ionicons
-                    name="navigate-outline"
-                    size={15}
-                    color={ORANGE}
-                  />
-
-                  <Text style={styles.etaText}>
-                    {etaMinutes
-                      ? `${etaMinutes} دقيقة`
-                      : "جاري الحساب"}
-                  </Text>
-                </View>
-
-                {routeDistanceKm != null ? (
-                  <View style={styles.distanceBadge}>
-                    <Text style={styles.distanceText}>
-                      {routeDistanceKm.toFixed(1)} كم
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            ) : null}
-          </View>
-
-          {customerLocation ? (
-            <Pressable
-              onPress={openNavigation}
-              style={styles.navigationButton}
-            >
-              <Ionicons
-                name="navigate"
-                size={17}
-                color="#FFFFFF"
-              />
-
-              <Text style={styles.navigationButtonText}>
-                بدء الملاحة إلى العميل
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
-
 
       </ScrollView>
       </LinearGradient>
@@ -2645,7 +2443,7 @@ export default function CaptainHomeScreen() {
                   paddingBottom: 12,
                 }}
               >
-                {selectedWeeklyShiftId ? (
+                {shiftChangeLocked ? (
                   <View
                     style={{
                       marginBottom: 12,
@@ -2703,7 +2501,7 @@ export default function CaptainHomeScreen() {
 
                   const disabled =
                     shiftSaving ||
-                    Boolean(selectedWeeklyShiftId) ||
+                    shiftChangeLocked ||
                     isSelected;
 
                   return (
@@ -2713,7 +2511,7 @@ export default function CaptainHomeScreen() {
                         borderRadius: 18,
                         borderWidth: 1,
                         borderColor:
-                          selectedWeeklyShiftId
+                          shiftChangeLocked
                             ? "#D1D5DB"
                             : isSelected
                               ? "#FDBA74"
@@ -2743,7 +2541,7 @@ export default function CaptainHomeScreen() {
                           <Text
                             style={{
                               color:
-                                selectedWeeklyShiftId
+                                shiftChangeLocked
                                   ? "#9CA3AF"
                                   : TEXT,
                               fontSize: 16,
@@ -2773,7 +2571,7 @@ export default function CaptainHomeScreen() {
                             <Text
                               style={{
                                 color:
-                                selectedWeeklyShiftId
+                                shiftChangeLocked
                                   ? "#9CA3AF"
                                   : "#5F5147",
                               fontSize: 13,
@@ -2835,7 +2633,7 @@ export default function CaptainHomeScreen() {
                               fontWeight: "900",
                             }}
                           >
-                            {selectedWeeklyShiftId
+                            {shiftChangeLocked
                               ? isSelected
                                 ? "الحالي"
                                 : "مغلق"
