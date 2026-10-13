@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,7 +11,7 @@ import { getLeaderScope } from "../../api/leader";
 
 export default function LeaderProfileScreen() {
   const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -24,19 +23,6 @@ export default function LeaderProfileScreen() {
       }
     })();
   }, []);
-
-  if (loading) {
-    return (
-      <Screen>
-        <View style={styles.center}>
-          <ActivityIndicator
-            size="large"
-            color="#FF6A00"
-          />
-        </View>
-      </Screen>
-    );
-  }
 
   const user = data?.user || {};
   const scope = data?.scope || {};
