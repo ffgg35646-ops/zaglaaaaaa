@@ -21,7 +21,6 @@ import {
   rejectCaptainOrder,
 } from "../../api/captainOrderBoard";
 import { getOrder } from "../../api/orders";
-import { checkCurrentSelectedShift } from "../../api/captain";
 
 const ORANGE = "#F97316";
 const WHITE = "#FFFFFF";
@@ -359,19 +358,10 @@ export default function CaptainOrderBoard({
         }
 
         /*
-         * الشفت الحالي هو البوابة الحقيقية للطلبات.
-         * لو لا يوجد شفت مختار/نشط الآن:
-         * لا نعرض أي طلب متاح ولا أي طلب نشط.
+         * الطلبات تعتمد على الشفت المختار ووقته فقط.
+         * تسجيل الحضور ليس شرطًا لعرضها. خادم الطلبات هو مصدر القرار
+         * النهائي، لذلك لا نخفي اللوحة بسبب فشل فحص شفت إضافي من الواجهة.
          */
-        try {
-          await checkCurrentSelectedShift();
-        } catch {
-          setActiveOrders([]);
-          setAvailableOrders([]);
-          setMaxOrders(DEFAULT_MAX_ORDERS);
-          return;
-        }
-
         const result =
           await getCaptainOrderBoard(areaId);
 
