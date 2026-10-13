@@ -296,24 +296,17 @@ export default function ShopHomeScreen() {
             ملخص الطلبات
           </Text>
 
-          <Text style={styles.sectionHint}>
-            تحديث مباشر
-          </Text>
-        </View>
-
-        {loading ? (
-          <View style={styles.loadingCard}>
-            <ActivityIndicator
-              size="large"
-              color={appTheme.primaryColor}
-            />
-
-            <Text style={styles.loadingText}>
-              جاري تحميل الطلبات...
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {loading ? (
+              <ActivityIndicator size="small" color={appTheme.primaryColor} />
+            ) : null}
+            <Text style={styles.sectionHint}>
+              تحديث مباشر
             </Text>
           </View>
-        ) : (
-          <>
+        </View>
+
+        <>
             {/* Stats */}
             <View style={styles.statsRow}>
               <StatCard
@@ -457,8 +450,7 @@ export default function ShopHomeScreen() {
               </View>
             )}
 </View>
-          </>
-        )}
+        </>
       </ScrollView>
     </Screen>
   );
