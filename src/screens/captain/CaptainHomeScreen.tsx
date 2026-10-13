@@ -174,6 +174,7 @@ function parseCoordinateText(value?: string | null): Coordinate | null {
   const text = String(value).trim();
 
   const patterns = [
+    /!3d(-?\\d+(?:\\.\\d+)?)!4d(-?\\d+(?:\\.\\d+)?)/i,
     /@(-?\\d+(?:\\.\\d+)?),\\s*(-?\\d+(?:\\.\\d+)?)/,
     /(?:q|query|ll)=(-?\\d+(?:\\.\\d+)?),\\s*(-?\\d+(?:\\.\\d+)?)/i,
     /geo:(-?\\d+(?:\\.\\d+)?),\\s*(-?\\d+(?:\\.\\d+)?)/i,
@@ -958,6 +959,9 @@ export default function CaptainHomeScreen() {
   const [customerLocationLink, setCustomerLocationLink] =
     useState<string>("");
 
+  const [customerNavigationUrl, setCustomerNavigationUrl] =
+    useState<string>("");
+
   const [searchResults, setSearchResults] =
     useState<any[]>([]);
 
@@ -1524,6 +1528,7 @@ export default function CaptainHomeScreen() {
       return;
     }
 
+    setCustomerNavigationUrl("");
     setCustomerLocation(next);
     setSearchResults([]);
 
@@ -1538,33 +1543,174 @@ export default function CaptainHomeScreen() {
   }
 
   async function applyCustomerLocationLink() {
-    const next =
-      parseCoordinateText(
-        customerLocationLink,
-      );
+    const input = customerLocationLink.trim();
 
-    if (!next) {
+    if (!input) {
       Alert.alert(
-        "الرابط غير مدعوم",
-        "ضع رابط Google Maps يحتوي على الإحداثيات أو اكتب الإحداثيات بهذا الشكل: 30.123, 47.456",
+        "موقع العميل مطلوب",
+        "الصق رابط Google Maps أو اكتب الإحداثيات أو اسم المكان.",
       );
       return;
     }
 
-    setCustomerLocation(next);
+    const parsedCoordinates = parseCoordinateText(input);
 
-    if (location) {
-      await buildRoute(
-        location,
-        next,
-      );
-    } else {
-      setRouteDistanceKm(null);
+    if (parsedCoordinates) {
+      setCustomerNavigationUrl("");
+      setCustomerLocation(parsedCoordinates);
+
+      if (location) {
+        await buildRoute(location, parsedCoordinates);
+      } else {
+        setRouteDistanceKm(null);
+      }
+      return;
     }
+
+    let parsedUrl: URL | null = null;
+    try {
+      parsedUrl = new URL(input);
+    } catch {
+      parsedUrl = null;
+    }
+
+    const host = parsedUrl?.hostname.toLowerCase() || "";
+    const isGoogleMapsUrl =
+      Boolean(parsedUrl) &&
+      (parsedUrl!.protocol === "https:" || parsedUrl!.protocol === "http:") &&
+      (
+        host === "google.com" ||
+        host.endsWith(".google.com") ||
+        host === "goo.gl" ||
+        host.endsWith(".goo.gl")
+      );
+
+    let searchQuery = input;
+
+    if (parsedUrl && isGoogleMapsUrl) {
+      // Keep the exact shared link as a fallback. Some Google short links
+      // resolve only inside Google Maps and do not expose coordinates in the URL.
+      setCustomerNavigationUrl(input);
+
+      searchQuery =
+        parsedUrl.searchParams.get("q") ||
+        parsedUrl.searchParams.get("query") ||
+        parsedUrl.searchParams.get("destination") ||
+        parsedUrl.searchParams.get("daddr") ||
+        "";
+
+      if (!searchQuery) {
+        const placeMatch = parsedUrl.pathname.match(
+          /\/maps\/(?:place|search)\/([^/]+)/i,
+        );
+
+        if (placeMatch?.[1]) {
+          try {
+            searchQuery = decodeURIComponent(
+              placeMatch[1].replace(/\+/g, " "),
+            );
+          } catch {
+            searchQuery = placeMatch[1].replace(/\+/g, " ");
+          }
+        }
+      }
+    } else if (parsedUrl) {
+      Alert.alert(
+        "الرابط غير مدعوم",
+        "الصق رابط Google Maps كاملًا يبدأ بـ https:// أو أدخل الإحداثيات.",
+      );
+      return;
+    } else {
+      setCustomerNavigationUrl("");
+    }
+
+    // Try to resolve place-name links into coordinates so the app can draw a route.
+    // If Google provides a short/share URL without a searchable place name, keep
+    // the original URL and open it directly rather than rejecting it.
+    if (searchQuery.trim()) {
+      setMapSearchLoading(true);
+      try {
+        const queries = parsedUrl
+          ? [searchQuery.trim(), `${searchQuery.trim()}, Iraq`]
+          : [`${searchQuery.trim()}, Iraq`, searchQuery.trim()];
+
+        for (const query of Array.from(new Set(queries))) {
+          const response = await fetch(
+            "https://nominatim.openstreetmap.org/search" +
+              `?q=${encodeURIComponent(query)}` +
+              "&format=jsonv2&limit=1&accept-language=ar",
+          );
+
+          if (!response.ok) continue;
+
+          const results = await response.json();
+          const result = Array.isArray(results) ? results[0] : null;
+          const latitude = Number(result?.lat);
+          const longitude = Number(result?.lon);
+
+          if (
+            !Number.isFinite(latitude) ||
+            !Number.isFinite(longitude) ||
+            latitude < -90 ||
+            latitude > 90 ||
+            longitude < -180 ||
+            longitude > 180
+          ) {
+            continue;
+          }
+
+          const resolved = { latitude, longitude };
+          setCustomerNavigationUrl("");
+          setCustomerLocation(resolved);
+
+          if (location) {
+            await buildRoute(location, resolved);
+          } else {
+            setRouteDistanceKm(null);
+          }
+          return;
+        }
+      } catch {
+        // A failed geocoding lookup must not make a valid shared Maps URL unusable.
+      } finally {
+        setMapSearchLoading(false);
+      }
+    }
+
+    if (isGoogleMapsUrl) {
+      setCustomerLocation(null);
+      setRoute([]);
+      setRouteDistanceKm(null);
+      setCustomerNavigationUrl(input);
+      Alert.alert(
+        "تم حفظ رابط الموقع",
+        "الرابط لا يعرض إحداثيات يمكن قراءتها داخل التطبيق؛ زر الملاحة سيفتح الرابط الأصلي مباشرة في Google Maps.",
+      );
+      return;
+    }
+
+    Alert.alert(
+      "تعذر تحديد الموقع",
+      "لم أتمكن من تحويل اسم المكان إلى إحداثيات. جرّب رابط Google Maps أو رابطًا يحتوي على إحداثيات.",
+    );
   }
 
   function openNavigation() {
+    if (customerNavigationUrl) {
+      void Linking.openURL(customerNavigationUrl).catch(() => {
+        Alert.alert(
+          "تعذر فتح الرابط",
+          "تأكد من وجود متصفح أو تطبيق خرائط، ثم حاول مرة أخرى.",
+        );
+      });
+      return;
+    }
+
     if (!customerLocation) {
+      Alert.alert(
+        "الموقع غير محدد",
+        "ألصق رابط Google Maps أو حدّد موقع العميل أولًا.",
+      );
       return;
     }
 
@@ -1579,7 +1725,12 @@ export default function CaptainHomeScreen() {
       : "https://www.google.com/maps/search/?api=1" +
         `&query=${destination}`;
 
-    void Linking.openURL(url);
+    void Linking.openURL(url).catch(() => {
+      Alert.alert(
+        "تعذر فتح الخرائط",
+        "تحقق من الاتصال بالإنترنت ثم حاول مرة أخرى.",
+      );
+    });
   }
 
   useEffect(() => {
@@ -1887,7 +2038,7 @@ export default function CaptainHomeScreen() {
     try {
       setAttendanceLoading(true);
 
-      await attendanceIn(user.id);
+      await attendanceIn();
       setAttendanceJustCompleted(true);
 
       Alert.alert(
@@ -1897,16 +2048,46 @@ export default function CaptainHomeScreen() {
 
       void loadData();
     } catch (error: any) {
-      if (error?.response?.status === 409) {
-        setAttendance(error.response.data);
+      if (
+        error?.response?.status === 409 &&
+        error?.response?.data?.attendance
+      ) {
+        setAttendance({
+          attendance: [error.response.data.attendance],
+        });
+        setAttendanceJustCompleted(true);
+        Alert.alert(
+          "تم تسجيل الحضور بالفعل",
+          error?.response?.data?.message ||
+            "تم تسجيل حضورك اليوم بالفعل.",
+        );
         return;
       }
 
+      const attendanceErrorCode = String(
+        error?.response?.data?.error ||
+          error?.response?.data?.code ||
+          "",
+      );
+      const attendanceErrorMessage =
+        error?.response?.data?.message ||
+        ({
+          CAPTAIN_HAS_NO_WEEKLY_SHIFT:
+            "اختَر الشفت أولًا من صفحة الشفت، ثم سجّل الحضور.",
+          CAPTAIN_SHIFT_INACTIVE:
+            "الشفت المختار غير فعال حاليًا. راجع صفحة الشفت.",
+          CAPTAIN_OUTSIDE_SHIFT:
+            "تسجيل الحضور غير متاح خارج وقت الشفت.",
+          ALREADY_CLOCKED_IN:
+            "تم تسجيل حضورك اليوم بالفعل.",
+        } as Record<string, string>)[attendanceErrorCode] ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "حدث خطأ أثناء تسجيل الحضور.";
+
       Alert.alert(
         "تعذر تسجيل الحضور",
-        error?.response?.data?.message ||
-          error?.message ||
-          "حدث خطأ أثناء تسجيل الحضور.",
+        attendanceErrorMessage,
       );
     } finally {
       setAttendanceLoading(false);
