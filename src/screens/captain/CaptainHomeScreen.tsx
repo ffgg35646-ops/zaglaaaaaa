@@ -2094,9 +2094,8 @@ export default function CaptainHomeScreen() {
     }
   }
 
-  // Keep the embedded web map on Iraq until a customer link is supplied.
-  // The native captain screen intentionally avoids mounting react-native-maps:
-  // maps are an optional extra and must never block the delivery dashboard.
+  // Customer destinations may be coordinates or Google Maps shared URLs.
+  // Opening a shared URL must still work when its coordinates are hidden in the URL.
   const mapCenter = customerLocation;
 
   const recentOrders = orders.slice(0, 8);
@@ -2815,7 +2814,9 @@ export default function CaptainHomeScreen() {
               <Text style={styles.nativeMapFallbackText}>
                 {customerLocation
                   ? "تم تحديد موقع العميل. اضغط بدء الملاحة لفتحه في Google Maps."
-                  : "الخريطة إضافة اختيارية. الصق رابط موقع العميل أعلاه ثم اضغط تطبيق الموقع."}
+                  : customerNavigationUrl
+                  ? "تم حفظ رابط Google Maps؛ اضغط بدء الملاحة لفتحه."
+                  : "الصق رابط موقع العميل أعلاه أو اختر موقعًا لتحديد المسار."}
               </Text>
             </View>
           )}
@@ -2861,7 +2862,7 @@ export default function CaptainHomeScreen() {
             ) : null}
           </View>
 
-          {customerLocation ? (
+          {customerLocation || customerNavigationUrl ? (
             <Pressable
               onPress={openNavigation}
               style={styles.navigationButton}
