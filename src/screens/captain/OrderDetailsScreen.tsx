@@ -22,7 +22,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import MapView, { Marker, Polyline } from "../../components/maps/MapView";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
 import Screen from "../../components/Screen";
@@ -612,111 +611,6 @@ export default function OrderDetailsScreen() {
     Number.isFinite(restaurantLongitude) &&
     restaurantLatitude !== 0 &&
     restaurantLongitude !== 0;
-
-  const restaurantLocation = hasRestaurantLocation
-    ? {
-        latitude: restaurantLatitude,
-        longitude: restaurantLongitude,
-      }
-    : null;
-
-  const captainToRestaurantDistance =
-    hasRestaurantLocation && captainLocation
-      ? distanceKm(
-          captainLocation.latitude,
-          captainLocation.longitude,
-          restaurantLatitude,
-          restaurantLongitude,
-        )
-      : null;
-
-  const restaurantToCustomerDistance =
-    hasRestaurantLocation && hasCustomerLocation
-      ? distanceKm(
-          restaurantLatitude,
-          restaurantLongitude,
-          customerLatitude,
-          customerLongitude,
-        )
-      : null;
-
-
-  const customerLocation = hasCustomerLocation
-    ? {
-        latitude: customerLatitude,
-        longitude: customerLongitude,
-      }
-    : null;
-
-  const activeMapTarget =
-    isPickupStage
-      ? restaurantLocation
-      : customerLocation;
-
-  const mapPoints = [
-    captainLocation,
-    restaurantLocation,
-    customerLocation,
-  ].filter(
-    (
-      point,
-    ): point is {
-      latitude: number;
-      longitude: number;
-    } => Boolean(point),
-  );
-
-  const mapRegion = useMemo(() => {
-    if (mapPoints.length === 0) {
-      return {
-        latitude: 33.3152,
-        longitude: 44.3661,
-        latitudeDelta: 4.8,
-        longitudeDelta: 5.2,
-      };
-    }
-
-    if (mapPoints.length === 1) {
-      return {
-        latitude: mapPoints[0].latitude,
-        longitude: mapPoints[0].longitude,
-        latitudeDelta: 0.03,
-        longitudeDelta: 0.03,
-      };
-    }
-
-    const latitudes = mapPoints.map(
-      (point) => point.latitude,
-    );
-
-    const longitudes = mapPoints.map(
-      (point) => point.longitude,
-    );
-
-    const minLatitude = Math.min(...latitudes);
-    const maxLatitude = Math.max(...latitudes);
-    const minLongitude = Math.min(...longitudes);
-    const maxLongitude = Math.max(...longitudes);
-
-    return {
-      latitude:
-        (minLatitude + maxLatitude) / 2,
-      longitude:
-        (minLongitude + maxLongitude) / 2,
-      latitudeDelta: Math.max(
-        0.02,
-        (maxLatitude - minLatitude) * 1.7,
-      ),
-      longitudeDelta: Math.max(
-        0.02,
-        (maxLongitude - minLongitude) * 1.7,
-      ),
-    };
-  }, [
-    captainLocation,
-    restaurantLocation,
-    customerLocation,
-  ]);
 
   const openRestaurantNavigation =
     async () => {
@@ -1383,155 +1277,44 @@ export default function OrderDetailsScreen() {
           </Text>
         </View>
 
-        {(captainLocation ||
-          hasRestaurantLocation ||
-          hasCustomerLocation) && (
-          <>
-            <SectionTitle
-              title="خريطة الطلب"
-              icon="map-outline"
-              appTheme={appTheme}
-            />
+        <SectionTitle
+          title="الملاحة إلى الموقع"
+          icon="navigate-outline"
+          appTheme={appTheme}
+        />
 
-            <View
-              style={styles.mapCard}
-              onLayout={(event) => {
-                setOrderMapY(
-                  event.nativeEvent.layout.y,
-                );
-              }}
-            >
-              <MapView
-                key={[
-                  captainLocation?.latitude ?? "none",
-                  captainLocation?.longitude ?? "none",
-                  restaurantLatitude,
-                  restaurantLongitude,
-                  customerLatitude,
-                  customerLongitude,
-                  isPickupStage ? "pickup" : "delivery",
-                ].join("-")}
-                style={styles.map}
-                initialRegion={mapRegion}
-                showsUserLocation={false}
-                showsMyLocationButton={false}
-              >
-                {captainLocation && (
-                  <Marker
-                    coordinate={captainLocation}
-                    title="موقع الكابتن"
-                    description="موقعك الحالي"
-                    pinColor="#1257D6"
-                  />
-                )}
+        <View
+          style={styles.mapCard}
+          onLayout={(event) => {
+            setOrderMapY(event.nativeEvent.layout.y);
+          }}
+        >
+          <View style={styles.mapInfo}>
+            <Text style={styles.mapMetricText}>
+              {hasMapTarget
+                ? `الوجهة: ${mapTarget.title}`
+                : "إحداثيات الوجهة غير متاحة؛ سيتم استخدام العنوان المحفوظ إن وجد"}
+            </Text>
 
-                {hasRestaurantLocation && (
-                  <Marker
-                    coordinate={{
-                      latitude: restaurantLatitude,
-                      longitude: restaurantLongitude,
-                    }}
-                    title="المطعم / المحل"
-                    description={restaurant.address}
-                    pinColor="#F28C28"
-                  />
-                )}
+            <Text style={styles.mapMetricText}>
+              {distance !== null
+                ? `المسافة التقريبية: ${distance.toFixed(1)} كم`
+                : "المسافة غير متاحة حاليًا"}
+            </Text>
 
-                {hasCustomerLocation && (
-                  <Marker
-                    coordinate={{
-                      latitude: customerLatitude,
-                      longitude: customerLongitude,
-                    }}
-                    title="الزبون"
-                    description={customer.address}
-                    pinColor="#16A34A"
-                  />
-                )}
+            <Text style={styles.mapMetricText}>
+              {etaMinutes !== null
+                ? `الوقت المتوقع: ${etaMinutes} دقيقة تقريبًا`
+                : "الوقت المتوقع غير متاح حاليًا"}
+            </Text>
+          </View>
 
-                {captainLocation &&
-                  restaurantLocation && (
-                    <Polyline
-                      coordinates={[
-                        captainLocation,
-                        restaurantLocation,
-                      ]}
-                      strokeWidth={4}
-                    />
-                  )}
-
-                {restaurantLocation &&
-                  customerLocation && (
-                    <Polyline
-                      coordinates={[
-                        restaurantLocation,
-                        customerLocation,
-                      ]}
-                      strokeWidth={4}
-                    />
-                  )}
-              </MapView>
-
-              <View style={styles.mapInfo}>
-                <Text style={styles.mapMetricText}>
-                  {distance !== null
-                    ? `المسافة إلى الوجهة الحالية: ${distance.toFixed(
-                        1,
-                      )} كم تقريبًا`
-                    : "المسافة غير متاحة حاليًا"}
-                </Text>
-
-                <Text style={styles.mapMetricText}>
-                  {etaMinutes !== null
-                    ? `الوقت المتوقع: ${etaMinutes} دقيقة تقريبًا`
-                    : "الوقت المتوقع غير متاح حاليًا"}
-                </Text>
-
-                <Text style={styles.mapMetricText}>
-                  {hasRestaurantLocation
-                    ? "🟠 المطعم / المحل: GPS محفوظ"
-                    : "🟠 المطعم / المحل: سيتم الاعتماد على العنوان"}
-                </Text>
-
-                <Text style={styles.mapMetricText}>
-                  {hasCustomerLocation
-                    ? "🟢 الزبون: GPS محفوظ"
-                    : "🟢 الزبون: بدون GPS، وسيتم استخدام العنوان"}
-                </Text>
-              </View>
-
-              {isPickupStage ? (
-                <AppButton
-                  title={
-                    Platform.OS === "web"
-                      ? "فتح الملاحة إلى المحل"
-                      : "توسيط الخريطة على المحل"
-                  }
-                  onPress={
-                    Platform.OS === "web"
-                      ? openRestaurantNavigation
-                      : () => {
-                          orderScrollRef.current?.scrollTo({
-                            y: Math.max(
-                              0,
-                              (orderMapY ?? 0) - 12,
-                            ),
-                            animated: true,
-                          });
-                        }
-                  }
-                  style={styles.mapButton}
-                />
-              ) : (
-                <AppButton
-                  title="فتح الملاحة إلى الزبون"
-                  onPress={openCustomerMap}
-                  style={styles.mapButton}
-                />
-              )}
-            </View>
-          </>
-        )}
+          <AppButton
+            title={isPickupStage ? "فتح الملاحة إلى المحل" : "فتح الملاحة إلى الزبون"}
+            onPress={isPickupStage ? openRestaurantNavigation : openCustomerMap}
+            style={styles.mapButton}
+          />
+        </View>
 
         <SectionTitle
           title="سجل الطلب"
@@ -2801,11 +2584,6 @@ const createStyles = (
       backgroundColor: appTheme.cardColor,
       borderWidth: 1,
       borderColor: appTheme.borderColor,
-    },
-
-    map: {
-      width: "100%",
-      height: 240,
     },
 
     mapInfo: {
