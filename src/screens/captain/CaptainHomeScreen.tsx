@@ -3121,6 +3121,11 @@ export default function CaptainHomeScreen() {
 
 const styles = StyleSheet.create({
   homeBackground: {
+    // Keep the captain dashboard measurable on native Android.
+    // Its child ScrollView uses flex: 1; without a flexing parent,
+    // the whole home content can collapse while the tab bar stays visible.
+    flex: 1,
+    minHeight: 0,
     width: "100%",
     backgroundColor: "#FFF8F0",
   },
