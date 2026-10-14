@@ -3,7 +3,7 @@ const isWeb =
   typeof window.localStorage !== "undefined";
 
 const DEFAULT_API_BASE_URL =
-  "https://dzwan-native-http-yxfq.vercel.app/api";
+  "https://dzwan-on7o-black.vercel.app/api";
 
 const configuredApiBaseUrl =
   typeof process.env.EXPO_PUBLIC_API_URL === "string"
@@ -11,7 +11,7 @@ const configuredApiBaseUrl =
     : "";
 
 const isLegacyBackend =
-  /^https:\/\/dzwan\.vercel\.app(?:\/api)?\/?$/i.test(
+  /^https:\/\/(?:dzwan\.vercel\.app|dzwan-native-http-yxfq\.vercel\.app)(?:\/api)?\/?$/i.test(
     configuredApiBaseUrl,
   );
 
