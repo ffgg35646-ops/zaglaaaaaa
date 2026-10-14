@@ -92,6 +92,26 @@ function getShifts(result: any) {
   return [];
 }
 
+function getShiftUnlockTimestamp(assignment: any, serverDeadline?: any): number | null {
+  const suppliedDeadline = new Date(serverDeadline ?? NaN).getTime();
+  if (Number.isFinite(suppliedDeadline)) return suppliedDeadline;
+
+  // Compatibility with API versions that do not yet send nextChangeAt.
+  // Prefer the true selection timestamp; never use updatedAt, which can move
+  // every time an old assignment is touched.
+  const selectedAt = [
+    assignment?.changedAt,
+    assignment?.createdAt,
+    assignment?.weekStart,
+  ]
+    .map((value) => new Date(value ?? NaN).getTime())
+    .find((value) => Number.isFinite(value));
+
+  return selectedAt === undefined
+    ? null
+    : selectedAt + 7 * 24 * 60 * 60 * 1000;
+}
+
 export default function ShiftScreen() {
   const setSelectedShift =
     useShiftSelectionStore(
@@ -163,9 +183,24 @@ const selectedShiftId = String(
       setShifts(getShifts(shiftsResult));
 
       if (currentResult) {
-        setAssignment(currentResult.assignment ?? null);
-        setCanSelectNewShift(Boolean(currentResult.canSelectNewShift));
-        setNextChangeAt(currentResult.nextChangeAt ?? null);
+        const currentAssignment = currentResult.assignment ?? null;
+        const unlockAt = getShiftUnlockTimestamp(
+          currentAssignment,
+          currentResult.nextChangeAt,
+        );
+        const unlockedByElapsedTime =
+          unlockAt !== null && Date.now() >= unlockAt;
+
+        setAssignment(currentAssignment);
+        // Server remains authoritative when locking a selection. The deadline
+        // fallback only repairs older responses that omit canSelectNewShift.
+        setCanSelectNewShift(
+          Boolean(currentResult.canSelectNewShift) || unlockedByElapsedTime,
+        );
+        setNextChangeAt(
+          currentResult.nextChangeAt ??
+            (unlockAt !== null ? new Date(unlockAt).toISOString() : null),
+        );
       }
     } catch (error: any) {
       if (background) {
