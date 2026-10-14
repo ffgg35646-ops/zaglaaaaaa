@@ -34,7 +34,6 @@ import * as Location from "expo-location";
 import Screen from "../../components/Screen";
 import { useAuthStore } from "../../store/authStore";
 import {
-  attendanceIn,
   checkShift,
   getCaptainCapacity,
   getMyWorkAreas,
@@ -43,7 +42,6 @@ import {
   selectWeeklyShift,
 } from "../../api/captain";
 import {
-  getAttendanceHistory,
   getShiftInfo,
 } from "../../api/shiftAttendanceRuntime";
 import CaptainOrderBoard from "../../components/captain/CaptainOrderBoard";
@@ -746,8 +744,6 @@ export default function CaptainHomeScreen() {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [attendanceLoading, setAttendanceLoading] = useState(false);
-  const [attendanceJustCompleted, setAttendanceJustCompleted] = useState(false);
 
   const [capacity, setCapacity] = useState<any>(null);
   const [shift, setShift] = useState<any>(null);
@@ -768,7 +764,6 @@ export default function CaptainHomeScreen() {
 
   const [workArea, setWorkArea] = useState<any>(null);
   const [workAreas, setWorkAreas] = useState<any[]>([]);
-  const [attendance, setAttendance] = useState<any>(null);
 
   const [location, setLocation] = useState<Coordinate | null>(null);
   const [customerLocation, setCustomerLocation] =
@@ -860,69 +855,10 @@ export default function CaptainHomeScreen() {
   const currentShift =
     shift?.shift || shift;
 
-  const shiftStart =
-    currentShift?.startTime ||
-    currentShift?.start ||
-    "";
-
-  const shiftEnd =
-    currentShift?.endTime ||
-    currentShift?.end ||
-    "";
-
-  const isNowInsideShift = (
-    startTime: string,
-    endTime: string,
-  ) => {
-    if (!startTime || !endTime) {
-      return false;
-    }
-
-    const parseTime = (value: string) => {
-      const [hours, minutes] = String(value)
-        .split(":")
-        .map(Number);
-
-      if (
-        !Number.isFinite(hours) ||
-        !Number.isFinite(minutes)
-      ) {
-        return null;
-      }
-
-      return hours * 60 + minutes;
-    };
-
-    const start = parseTime(startTime);
-    const end = parseTime(endTime);
-
-    if (start === null || end === null) {
-      return false;
-    }
-
-    const now = new Date(shiftClockNow);
-    const current =
-      now.getHours() * 60 +
-      now.getMinutes();
-
-    if (start <= end) {
-      return current >= start && current < end;
-    }
-
-    return current >= start || current < end;
-  };
-
   const shiftSelected =
     Boolean(
       shiftCardOpen ||
       selectedWeeklyShiftId,
-    );
-
-  const insideShift =
-    Boolean(shiftSelected) &&
-    isNowInsideShift(
-      String(shiftStart),
-      String(shiftEnd),
     );
 
   useEffect(() => {
@@ -1141,12 +1077,6 @@ export default function CaptainHomeScreen() {
         })
         .catch(() => {});
 
-      // سجل الحضور في الخلفية.
-      void getAttendanceHistory()
-        .then((attendanceResult) => {
-          setAttendance(attendanceResult);
-        })
-        .catch(() => {});
 
       // عداد الطلبات المتاحة في الخلفية.
       const selectedAreaId = String(
@@ -1594,80 +1524,6 @@ export default function CaptainHomeScreen() {
     await loadData();
   }
 
-  const attendanceRows =
-    Array.isArray(attendance?.attendance)
-      ? attendance.attendance
-      : Array.isArray(attendance)
-        ? attendance
-        : [];
-
-  const todayAttendance =
-    attendanceRows.find((row: any) => {
-      const attendanceDate =
-        row?.clockInAt ||
-        row?.checkIn ||
-        row?.date;
-
-      if (!attendanceDate) return false;
-
-      const rowDate = new Date(attendanceDate);
-      const now = new Date();
-
-      return (
-        rowDate.getFullYear() === now.getFullYear() &&
-        rowDate.getMonth() === now.getMonth() &&
-        rowDate.getDate() === now.getDate()
-      );
-    }) || null;
-
-  const hasTodayAttendance =
-    Boolean(
-      todayAttendance?.clockInAt ||
-      todayAttendance?.checkIn
-    );
-
-  async function handleCheckIn() {
-    if (
-      !user?.id ||
-      !shiftSelected ||
-      (hasTodayAttendance || attendanceJustCompleted) ||
-      attendanceLoading
-    ) {
-      return;
-    }
-
-    try {
-      setAttendanceLoading(true);
-
-      await attendanceIn(user.id);
-      setAttendanceJustCompleted(true);
-
-      Alert.alert(
-        "تم تسجيل الحضور",
-        "تم تسجيل حضورك للشفت بنجاح.",
-      );
-
-      void loadData();
-    } catch (error: any) {
-      if (error?.response?.status === 409) {
-        setAttendance(error.response.data);
-        return;
-      }
-
-      Alert.alert(
-        "تعذر تسجيل الحضور",
-        error?.response?.data?.message ||
-          error?.message ||
-          "حدث خطأ أثناء تسجيل الحضور.",
-      );
-    } finally {
-      setAttendanceLoading(false);
-    }
-  }
-
-  // Keep the embedded web map on Iraq until a customer link is supplied.
-  // The native captain screen intentionally avoids mounting react-native-maps:
-  // maps are an optional extra and must never block the delivery dashboard.
   const mapCenter = customerLocation;
 
   const recentOrders = orders.slice(0, 8);
@@ -1955,64 +1811,6 @@ export default function CaptainHomeScreen() {
 
           </View>
         </LinearGradient>
-
-        {/* ATTENDANCE ACTIONS */}
-        <View style={styles.attendanceActions}>
-          <Pressable
-            onPress={handleCheckIn}
-            disabled={
-              !shiftSelected ||
-              !insideShift ||
-              (hasTodayAttendance || attendanceJustCompleted) ||
-              attendanceLoading
-            }
-            style={({ pressed }) => [
-              styles.attendanceActionButton,
-              styles.attendanceCheckInButton,
-              (
-                !shiftSelected ||
-                !insideShift ||
-                (hasTodayAttendance || attendanceJustCompleted) ||
-                attendanceLoading
-              ) && styles.attendanceDisabledButton,
-              pressed && {
-                opacity: 0.9,
-                transform: [{ scale: 0.98 }],
-              },
-            ]}
-          >
-            {attendanceLoading ? (
-              <ActivityIndicator
-                size="small"
-                color="#FFFFFF"
-              />
-            ) : (
-              <>
-                <View style={styles.attendanceActionIcon}>
-                  <Ionicons
-                    name={
-                      (hasTodayAttendance || attendanceJustCompleted)
-                        ? "checkmark-circle-outline"
-                        : "log-in-outline"
-                    }
-                    size={20}
-                    color="#FFFFFF"
-                  />
-                </View>
-
-                <Text style={styles.attendanceActionTitle}>
-                  {(hasTodayAttendance || attendanceJustCompleted)
-                    ? "تم تسجيل حضورك"
-                    : !shiftSelected
-                      ? "اختر الشفت أولًا"
-                      : !insideShift
-                        ? "غير متاح الآن"
-                        : "تسجيل الحضور"}
-                </Text>
-              </>
-            )}
-          </Pressable>
-        </View>
 
         {/* ORDER SUMMARY */}
         <View
@@ -3212,59 +3010,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF0E1",
     alignItems: "center",
     justifyContent: "center",
-  },
-
-  attendanceActions: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 18,
-    marginBottom: 16,
-  },
-
-  attendanceActionButton: {
-    flex: 1,
-    minHeight: 48,
-    borderRadius: 15,
-    paddingHorizontal: 10,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 7,
-  },
-
-  attendanceCheckInButton: {
-    backgroundColor: GREEN,
-  },
-
-  attendanceCheckOutButton: {
-    backgroundColor: RED,
-  },
-
-  attendanceDisabledButton: {
-    opacity: 0.38,
-  },
-
-  attendanceActionIcon: {
-    width: 29,
-    height: 29,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  attendanceActionTitle: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "900",
-  },
-
-  attendanceHint: {
-    color: MUTED,
-    fontSize: 11,
-    fontWeight: "700",
-    textAlign: "center",
-    marginTop: -3,
-    marginBottom: 2,
   },
 
 
