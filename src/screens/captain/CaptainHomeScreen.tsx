@@ -550,6 +550,23 @@ function DeliveryRiderVector() {
 }
 
 
+function getShiftUnlockTimestamp(assignment: any, serverDeadline?: any): number | null {
+  const suppliedDeadline = new Date(serverDeadline ?? NaN).getTime();
+  if (Number.isFinite(suppliedDeadline)) return suppliedDeadline;
+
+  const selectedAt = [
+    assignment?.changedAt,
+    assignment?.createdAt,
+    assignment?.weekStart,
+  ]
+    .map((value) => new Date(value ?? NaN).getTime())
+    .find((value) => Number.isFinite(value));
+
+  return selectedAt === undefined
+    ? null
+    : selectedAt + 7 * 24 * 60 * 60 * 1000;
+}
+
 function formatShiftClock(value: any) {
   if (!value) return "";
 
@@ -1209,7 +1226,13 @@ export default function CaptainHomeScreen() {
    *
    * الـBackend هو صاحب القرار النهائي دائمًا.
    */
-  const canChangeShift = Boolean(shift?.canSelectNewShift);
+  const shiftUnlockAt = getShiftUnlockTimestamp(
+    weeklyAssignment,
+    shift?.nextChangeAt,
+  );
+  const canChangeShift =
+    Boolean(shift?.canSelectNewShift) ||
+    (shiftUnlockAt !== null && Date.now() >= shiftUnlockAt);
 
   const cardShiftSelected =
     shiftCardOpen || Boolean(selectedWeeklyShiftId);
