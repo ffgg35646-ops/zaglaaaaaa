@@ -73,26 +73,27 @@ jobs:
         if: steps.safety.outputs.skip_ota != 'true'
         run: npx expo export --platform web --output-dir /tmp/zajel-web-export
 
-      - name: Check Expo access token
+      - name: Check ZALGA Expo access token
         id: auth
         if: steps.safety.outputs.skip_ota != 'true'
         shell: bash
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          ZALGA: ${{ secrets.ZALGA }}
         run: |
-          if [[ -n "${EXPO_TOKEN:-}" ]]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if [[ -z "${ZALGA:-}" ]]; then
+            echo "::error::GitHub Actions secret ZALGA is missing or empty in this repository."
             {
-              echo "### App and web bundles validated; OTA not published"
-              echo "The GitHub Actions secret EXPO_TOKEN is missing. Add it in Settings → Secrets and variables → Actions. No over-the-air update was sent."
+              echo "### OTA not published"
+              echo "The GitHub Actions secret named ZALGA was not available to this workflow. Check that it was saved under Settings → Secrets and variables → Actions in this repository."
             } >> "$GITHUB_STEP_SUMMARY"
-            echo "::warning::EXPO_TOKEN is missing; bundle checks passed but OTA publication was skipped."
+            exit 1
           fi
+          echo "available=true" >> "$GITHUB_OUTPUT"
+          echo "Secret ZALGA is available to the workflow."
 
       - name: Publish OTA update to preview channel
         if: steps.safety.outputs.skip_ota != 'true' && steps.auth.outputs.available == 'true'
         run: npx eas-cli update --channel preview --message "GitHub OTA update $GITHUB_SHA" --non-interactive
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_TOKEN: ${{ secrets.ZALGA }}
